@@ -67,33 +67,32 @@ Masalah riset yang layak harus memenuhi 5 kriteria:
 PROBLEM STATEMENT BUILDER
 
 Domain & Konteks
-  Domain   : ____________________
-  Konteks  : ____________________
-
+  Domain   : Internet of Things (IoT) Smart Home 
+  Konteks  : Sistem lampu otomatis rumah menggunakan sensor RIP DAN LDR berbasis mikrokontroler 
 System Context
-  Input       : ____________________
-  Process     : ____________________
-  Output      : ____________________
-  Outcome     : ____________________
-  Constraints : ____________________
-  Stakeholders: ____________________
+  Input       : Sensor RIP untuk deteksi gerakan dan sensor LDR untuk deteksi intensitas cahaya 
+  Process     : Mikrokontroler membaca data sensor dan menentukan kondisi lampu ON/OFF 
+  Output      : Lampu otomatis menyala atau mati
+  Outcome     : Penghematan energi listrik dan kemudahan pengguna 
+  Constraints : Akurasi sensor, delay respon sistem, kondisi lingkungan cahaya
+  Stakeholders: Pengguna rumah, teknisi IoT, dan peneliti
 
 Fenomena → Problem
-  Fenomena yang diamati             : ____________________
-  Gejala (symptom) yang terukur     : ____________________
-  Masalah yang didiagnosis          : ____________________
-  Masalah riset (researchable)      : ____________________
-  Variabel yang terukur             : ____________________
+  Fenomena yang diamati             : Lampu rumah sering menyala terus meskipun tidak ada aktivitas
+  Gejala (symptom) yang terukur     : Konsumsi listrik meningkat dan lampu aktif lebih dari 12 jam per hari
+  Masalah yang didiagnosis          : Sistem lampu masih manual dan sensor belum bekerja secara optimal 
+  Masalah riset (researchable)      : Belum diketahui tingkat akurasi dan waktu respon kombinasi sensor PIR dan LDR pada sistem smart home lampu otomatis
+  Variabel yang terukur             : Akurasi deteksi sensor, waktu respon sistem, konsumsi energi listrik
 
 Problem Quality Check
-  [ ] Clarity — Apakah satu orang membaca akan paham?
-  [ ] Measurability — Apakah ada metrik kuantitatif?
-  [ ] Relevance — Apakah penting untuk domain?
-  [ ] Testability — Apakah bisa gagal?
-  [ ] Impact — Apakah ada kontribusi jika terjawab?
+  [*] Clarity — Apakah satu orang membaca akan paham?
+  [*] Measurability — Apakah ada metrik kuantitatif?
+  [*] Relevance — Apakah penting untuk domain?
+  [*] Testability — Apakah bisa gagal?
+  [*] Impact — Apakah ada kontribusi jika terjawab?
 
 Problem Statement (1 paragraf):
-  ____________________
+  Penggunaan lampu rumah yang manual menyebabkan pemborosan listrik karena lampu sering dibiarkan menyala meskipun tidak ada aktivitas. Sistem smart home berbasis IoT ini dapat digunakan untuk otomatisasi lampu, namun kinerja sistem dalam mendeteksi gerakan dan kondisi cahaya belum diketahui pasti. Oleh karena itu dilakukan penelitian yang bertujuan menganalisis tingkat akurasi dan waktu respon kombinassi sensor RIP dan LDR pada sistem smart home lampu otomatis berdasarkan parametr akurasi deteksi, waktu respon, dan konsumsi energi listrik untuk meningkatkan efisiensi penggunaan energi pada rumah pintar. 
 ```
 
 ---
@@ -102,18 +101,18 @@ Problem Statement (1 paragraf):
 
 Pilih satu topik di bidang TI yang diminati. Transformasikan melalui 5 tahap Problem Formation Model.
 
-**Topik awal:** ________________________________________
+**Topik awal:** Smart Home Lampu Otomatis Berbasis IoT 
 
 | Tahap | Hasil |
 |-------|-------|
-| Reality | *Contoh: Aplikasi e-commerce sering ditinggalkan saat checkout* |
-| Observed Issue (Symptom) | *Contoh: Bounce rate checkout 68%* |
-| Diagnosed Problem (Root Cause) | |
-| Researchable Problem | |
-| Measurable Variable | |
+| Reality | Lampu rumah sering lupa dimatikan saat tidak ada aktivitas  |
+| Observed Issue (Symptom) | Lampu menyala lebih dari 12 jam per hari |
+| Diagnosed Problem (Root Cause) | Tidak ada sistem otomatis berbasis sensor untuk mengontrol lampu |
+| Researchable Problem | Belum ada analisis akurasi sensor RIP dan LDR pada smart home lampu otomatis |
+| Measurable Variable | Akurasi deteksi, waktu respon, konsumsi listrik |
 
-**Apakah terjebak solution-first thinking?** [ ] Ya / [ ] Tidak
-> Jika ya, kembali ke tahap mana? ________________________
+**Apakah terjebak solution-first thinking?** [ ] Ya / [ * ] Tidak
+> Jika ya, kembali ke tahap mana? Tidak ada 
 
 ---
 
@@ -123,14 +122,14 @@ Gambarkan konteks sistem dari masalah riset di Latihan 1.
 
 | Komponen | Deskripsi |
 |----------|----------|
-| Input | *Contoh: Request HTTP dari browser pengguna* |
-| Process | |
-| Output | |
-| Outcome | |
-| Constraints | |
-| Stakeholders | |
+| Input | Data sensor RIP dan LDR |
+| Process | Mikrokontroler mengolah data sensor dan menentukan kondisi lampu |
+| Output | Lampu otomatis ON/OFF|
+| Outcome | Penghematan energi listrik |
+| Constraints | Sensitivitas sensor, delay sistem, kondisi lingkungan |
+| Stakeholders | Pengguna rumah dan peneliti sistem IoT|
 
-**Komponen mana yang paling relevan dengan masalah riset?** _______________
+**Komponen mana yang paling relevan dengan masalah riset?** Process dan Input Sensor 
 
 ---
 
@@ -140,17 +139,16 @@ Evaluasi problem statement yang sudah dibuat menggunakan 5 kriteria.
 
 | Kriteria | Skor (1-5) | Justifikasi |
 |----------|-----------|-------------|
-| Clarity | *Contoh: 4 — cukup jelas tapi perlu spesifikasi dataset* | |
-| Measurability | | |
-| Relevance | | |
-| Testability | | |
-| Impact | | |
+| Clarity | 5 | Masalah dijelaskan dengan jelas dan spesifik |
+| Measurability | 5 | Variabel dapat diukur secara kuantitatif |
+| Relevance | 5 | Berkaitan langsung dengan smart home IoT|
+| Testability | 4 | Dapat diuji melalui ekperimen sistem |
+| Impact | 5 | Memberikan manfaat penghematan energi|
 
-**Skor total:** _____ / 25
+**Skor total:** 24 / 25
 
 **Problem statement versi final (1 paragraf):**
-> ___________________________________________________
-> ___________________________________________________
+> Penggunaan lampu rumah yang manual menyebabkan pemborosan energi listrik karena lampu lupa dimatikan. Sistem smart home berbasis IoT dengan sensor RIP dan LDR dapat mengatasi permasalahan tersebut, namun tingkat akurasi deteksi waktu respon sistem belum diketahui secara pesti. Penelitian ini bertujuan untuk menganalisis kinerja sistem smart home berdasarkan parameter akurasi deteksi sensor, waktu respon sistem, dan konsumsi energi listrik untuk meningkatkan efisiensi penggunaan energi pada lingkungan rumah.
 
 ---
 
@@ -159,5 +157,5 @@ Evaluasi problem statement yang sudah dibuat menggunakan 5 kriteria.
 > Bandingkan "masalah" yang biasa ditemui saat coding (bug, error) dengan masalah riset. Apa perbedaan fundamental dalam cara mendefinisikan dan mendekati keduanya?
 
 **Jawaban:**
-> ___________________________________________________
-> ___________________________________________________
+> Masalah pada saat coding biasanya berupa bug, error sintaks, atau fitur yang tidak berjalan sesuai fungsi sehingga fokusnya adalah memperbaiki sistem agar dapat berjalan dengan benar.Dalam coding, solusi biasanya langsung diterapkan untuk memperbaiki kesalahan
+> Masalah riset berfokus pada menemukan kesenjangan pengetahuan yang belum diketahui dan harus dibuktikan melalui eksperimen. Dalam riset diperlukan proses analisis mulai dari fenomena, gejala, akar masalah, hingga variabel terukur sebelum menentukan solusi. Oleh karena itu, masalah riset lebih terstruktur, terukur, dan harus dapat diuji secara ilmiah.
