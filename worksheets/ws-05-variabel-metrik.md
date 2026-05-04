@@ -66,19 +66,19 @@ Metrik harus ditentukan **sebelum** eksperimen. Memilih metrik setelah melihat d
 ```
 VARIABLE & METRIC DEFINITION
 
-Research Question: ____________________
+Research Question: "Apakah implementasi protokol MQTT dengan enkripsi TLS/SSL pada ESP32 menghasilkan latency dan packet loss yang secara signifikan berbeda dibandingkan dengan protokol HTTP standar pada sistem smart home?"
 
 | Variabel | Tipe | Konsep | Metrik | Skala | Satuan | Cara Mengukur | Justifikasi |
 |----------|------|--------|--------|-------|--------|---------------|-------------|
-|          | IV   |        |        |       |        |               |             |
-|          | DV   |        |        |       |        |               |             |
-|          | CV   |        |        |       |        |               |             |
+|  Protokol Komunikasi  | IV   | Metode pengiriman data aman  |  MQTT+TLS vs HTTP   |  Nominal  |    -  |  Pengaturan perangkat lunak pada mikrokontroler   |    Variabel ini adalah intervensi utama untuk melihat efek keamanan         |
+|     Latensi (Response Time)     | DV   | Kecepatan sistem       |  Round Trip Time (RTT)      |  Ratio     |   ms     |     Selisih waktu kirim perintah hingga terima ACK          |     Mewakili kenyamanan pengguna (user experience) dalam mengontrol rumah.        |
+|  Kekuatan Sinyal Wi-Fi        | CV   |    Stabilitas medium    | RSSI       |    Interval   |     dBm   |    Dibaca melalui fungsi WiFi.RSSI() pada ESP32           |    Memastikan hasil bukan karena perbedaan jarak router.         |
 
 Alignment Check:
   RQ → Concept → Variable → Metric → Data → Result
-  [ ] Setiap langkah terdokumentasi
-  [ ] Tidak ada "lompatan logis"
-  [ ] Metrik mengukur apa yang dimaksud (construct validity)
+  [ *] Setiap langkah terdokumentasi
+  [ *] Tidak ada "lompatan logis"
+  [ *] Metrik mengukur apa yang dimaksud (construct validity)
 ```
 
 ---
@@ -87,17 +87,16 @@ Alignment Check:
 
 Gunakan RQ dari WS-04. Definisikan variabel dan metriknya.
 
-**RQ:** __________________________________________________
+**RQ:** "Apakah penggunaan algoritma enkripsi AES-128 pada NodeMCU meningkatkan latensi secara signifikan dibandingkan tanpa enkripsi?"
 
 | Variabel | Tipe | Konsep Abstrak | Metrik Konkret | Skala (NOIR) | Satuan |
 |----------|------|---------------|----------------|-------------|--------|
-| *Contoh: Jenis model* | *IV* | *Pendekatan klasifikasi* | *Categorical: CNN vs RF* | *Nominal* | *—* |
-| | DV | | | | |
-| | CV | | | | |
+| Keamanan Data | IV | Proteksi pesan | Status Enkripsi (On/Off) | Nominal| —|
+| VariabelTipeKonsep AbstrakMetrik KonkretSkala (NOIR)SatuanKeamanan DataIVProteksi pesanStatus Enkripsi (On/Off)Nominal—Kecepatan Sistem| DV | Waktu proses| End-to-End Latency| Ratio| Milidetik (ms)|
+| Beban Komputasi| CV |Konsumsi Resource | RAM Usage|Ratio | KB|
 
-**Apakah ada lompatan logis dalam rantai?** [ ] Ya / [ ] Tidak
-> Jika ya, di mana? ____________________________________
-
+**Apakah ada lompatan logis dalam rantai?** [ ] Ya / [ *] Tidak
+> Jika ya, di mana? (Rantai sudah selaras dari konsep keamanan ke metrik waktu).
 ---
 
 ## Latihan 2 — Evaluasi Metrik
@@ -106,15 +105,15 @@ Evaluasi metrik DV yang dipilih di Latihan 1 menggunakan 3 kriteria.
 
 | Kriteria | Skor (1-5) | Justifikasi |
 |----------|-----------|-------------|
-| Representative | *Contoh: 4 — F1-Score mewakili keseimbangan precision-recall* | |
-| Sensitive | | |
-| Feasible | | |
+| Representative | 5 | Waktu respon adalah representasi paling akurat untuk konsep "kecepatan" dalam IoT.|
+| Sensitive | 4 | Sangat peka terhadap perubahan kecil dalam ukuran paket atau overhead enkripsi.|
+| Feasible | 5 |Sangat mudah diukur menggunakan fungsi timestamping (millis()) pada mikrokontroler. |
 
-**Apakah perlu secondary metric?** [ ] Ya / [ ] Tidak
-> Jika ya, apa dan mengapa? _____________________________
+**Apakah perlu secondary metric?** [ * ] Ya / [ ] Tidak
+> Jika ya, apa dan mengapa? Jitter (variasi latensi), untuk melihat konsistensi performa sistem dari waktu ke waktu.
 
 **Contoh kasus ceiling effect untuk metrik ini:**
-> ___________________________________________________
+> Jika pengujian dilakukan pada jaringan lokal yang sangat kosong dan cepat, perbedaan enkripsi mungkin tidak terlihat karena performa jaringan mencapai batas maksimum (ceiling), sehingga semua hasil terlihat "sangat cepat" meskipun ada beban tambahan.
 
 ---
 
@@ -124,10 +123,10 @@ Bayangkan data yang akan dikumpulkan dari eksperimen. Evaluasi 4 dimensi kualita
 
 | Dimensi | Pertanyaan | Jawaban | Strategi Mitigasi |
 |---------|-----------|---------|------------------|
-| Completeness | *Apakah semua data point terkumpul?* | | |
-| Consistency | *Apakah ada kontradiksi internal?* | | |
-| Validity | *Apakah benar-benar mengukur yang dimaksud?* | | |
-| Representativeness | *Apakah sampel mewakili populasi target?* | | |
+| Completeness | Apakah semua data point (log transaksi) dapat terkumpul tanpa ada yang terlewat? | Data mungkin hilang jika koneksi Wi-Fi terputus di tengah jalan saat pengiriman ke cloud.| Menggunakan logging lokal di SD Card pada NodeMCU/ESP32 sebagai cadangan data jika kiriman gagal.|
+| Consistency | Apakah terdapat kontradiksi internal atau perbedaan standar waktu antara perangkat? | Alat ukur (timer) mungkin berbeda antara server dan client karena perbedaan clock speed.| Melakukan sinkronisasi waktu menggunakan protokol NTP (Network Time Protocol) secara berkala.|
+| Validity | Apakah metrik yang diukur benar-benar mencerminkan variabel yang diteliti? | Latensi yang diukur bisa tercampur dengan delay eksternal dari aplikasi Blynk atau server Cloud.| Melakukan pengujian awal di jaringan lokal (LAN) untuk isolasi variabel overhead enkripsi.|
+| Representativeness | Apakah sampel data yang diambil sudah mewakili berbagai kondisi populasi/lingkungan?| Sampel data awal hanya diambil dari satu skenario (satu model rumah/satu ruangan).| Melakukan pengujian pada 3 skenario jarak yang berbeda dari router (1m, 5m, dan 10m) serta kondisi penghalang (tembok).|
 
 ---
 
@@ -136,5 +135,8 @@ Bayangkan data yang akan dikumpulkan dari eksperimen. Evaluasi 4 dimensi kualita
 > Mengapa memilih metrik setelah melihat data dianggap p-hacking? Apa bedanya dengan eksplorasi data yang sah?
 
 **Jawaban:**
-> ___________________________________________________
-> ___________________________________________________
+> Memilih metrik setelah melihat data dianggap p-hacking karena peneliti secara sengaja mencari metrik yang hanya memberikan hasil signifikan (p < 0.05) untuk mendukung hipotesisnya, sementara mengabaikan metrik lain yang gagal. Ini adalah bentuk bias yang menyesatkan.
+
+> Perbedaannya dengan eksplorasi data yang sah:
+Eksplorasi Data: Dilakukan untuk mencari pola baru tanpa membuat klaim pembuktian akhir. Hasilnya digunakan untuk membangun hipotesis baru di riset mendatang.
+P-hacking: Dilakukan untuk memanipulasi kesimpulan riset yang sedang berjalan agar terlihat sukses, padahal hasil tersebut bisa jadi hanya kebetulan belaka.
