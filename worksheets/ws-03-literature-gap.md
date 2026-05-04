@@ -61,41 +61,42 @@ Membandingkan deep learning 2024 dengan decision tree sederhana tanpa justifikas
 ```
 LITERATURE MAPPING
 
-Topik      : Smart Home Lampu Otomatis Berbasis IoT (Sensor PIR & LDR)
+Topik      : Implementasi dan Optimalisasi Sistem Smart Home & Keamanan Berbasis IoT
 Database   : Google Scholar
-Query      : IoT Smart Home PIR LDR Lampu Otomatis, Smart Lighting IoT PIR LDR energy efficiency
-Tahun      : 2019-2024
-Hasil awal : 50 paper → Screening → 5 paper final
+Query      : ("smart home" OR "rumah pintar") AND ("IoT" OR "Internet of Things") AND ("NodeMCU" OR "ESP32")
+Tahun      : 2024-2025
+Hasil awal : 20 paper → Screening → 6 paper final
 
 Literature Matrix (concept-centric):
 
 | Study | Tahun | Method | Data | Result | Limitation |
-|Rahmat et al.|2021 | IoT+PIR sensor |Data Gerakan |Lampu Otomatis berjalan baik |Tidak mempertimbangkan cahaya|
-|Sari et al.|2020 |LDR-based control |Intensitas cahaya |Hemat listrik 20% |Tidak deteksi manusia |
-|Putra et al.|2022 |PIR + LDR |Data sensor real-time|Sistem lebih akurat |Delay respon masih tinggi |
-|Chen et al.|2023 |Smart lighting IoT |Dataset smart home |Efisiensi meningkat|Tidak diuji di rumah nyata |
-|Kumar et al.|2021 |MQTT smart home|Data IoT |Sistem stabil|Latency komunikasi tinggi|
+|Agma|2025 | Implementasi IoT Terintegrasi |	Sensor suhu, kelembaban, gerak, aplikasi mobile |Meningkatkan kenyamanan & efisiensi energi|Belum merinci detail waktu respons sistem|
+|Hadiatullah dkk.|2025 |Research & Development (R&D) |NodeMCU ESP8266, Relay, Jaringan Wi-Fi |Koneksi stabil, respons < 10 detik, operasional 24 jam |Antarmuka aplikasi (UI) perlu perbaikan |
+|Ferella dkk.|2025 |Prototyping (Kamera IoT) |Modul Kamera, NodeMCU, Web/Mobile App|Respons cepat, notifikasi otomatis aktivitas mencurigakan |Fokus terbatas pada keamanan visual |
+|Pramono & Muntahar|2024 |Extreme Programming (XP)|NodeMCU ESP8266, CCTV, ATS Power |Akurasi deteksi 95%, delay rata-rata 2 detik|Belum mencakup optimalisasi konsumsi daya perangkat|
+|Hamka dkk.|2025 |Research & Development (R&D)|ESP32, Blynk Cloud, Smart Lighting|Sistem responsif (rata-rata 73,4 ms), hemat energi|Isu keamanan privasi dan keterbatasan akses internet|
+|Sari dkk.|2024 |Literature Review|Arduino Uno, Sensor, IoT di Pertanian|Identifikasi potensi IoT untuk efisiensi operasional|Kurangnya implementasi hardware secara langsung|
 
 Pola yang ditemukan:
-  Metode dominan     : Sensor PIR dan LDR berbasis IoT
-  Dataset umum       : Data sensor real-time skala kecil
-  Limitasi berulang  : Delay respon, akurasi sensor belum optimal, pengujian terbatas
+  Metode dominan     : Research and Development (R&D) dan Prototyping.
+  Dataset umum       : NodeMCU (ESP8266/ESP32), Modul Relay, dan sensor lingkungan (suhu/gerak).
+  Limitasi berulang  : Ketergantungan tinggi pada koneksi internet (Wi-Fi), masalah latensi pada jaringan buruk, dan kurangnya fitur enkripsi data yang mendalam.
 
 GAP IDENTIFICATION
 
-Gap 1: [Jenis : Performance Gap
-  Deskripsi    : Akurasi deteksi dan waktu respon sistem masih belum optimal
-  Bukti        : Beberapa studi menunjukkan delay tinggi dan kesalahan deteksi sensor
-  Signifikansi : Berpengaruh langsung terhadap kenyamanan dan efisiensi energi
+Gap 1: [Jenis : Performance/ Method Gap
+  Deskripsi    : Kurangnya standarisasi pada protokol keamanan data (enkripsi) untuk mencegah peretasan akses kontrol rumah.
+  Bukti        : Mayoritas jurnal (Pramono 2024, Hamka 2025) fokus pada fungsionalitas kendali, namun belum mendemonstrasikan proteksi terhadap serangan cyber.
+  Signifikansi : Keamanan adalah aspek krusial; tanpa enkripsi, sistem kendali rumah pintar bisa disalahgunakan oleh pihak luar.
 Gap 2: [Jenis: Context Gap]
-  Deskripsi    : Sistem belum banyak diuji pada kondisi rumah nyata dengan variasi cahaya
-  Bukti        : Banyak penelitian hanya menggunakan simulasi atau skala kecil
-  Signifikansi : Hasil penelitian belum tentu berlaku di kondisi nyata
+  Deskripsi    : Kesenjangan efektivitas sistem saat terjadi gangguan bandwidth atau di wilayah dengan konektivitas rendah.
+  Bukti        : Hadiatullah (2025) menyebutkan interferensi Wi-Fi sebagai kendala, namun belum ada solusi mekanisme offline atau low-bandwidth mode.
+  Signifikansi : Sistem IoT harus tetap andal (reliable) bahkan dalam kondisi jaringan tidak stabil agar dapat digunakan di berbagai wilayah (termasuk pelosok).
 
 Baseline Selection:
 | Baseline | Relevansi | Representatif | Source |
-|PIR-based smart lighting|PIR-based smart lighting|Banyak digunakan pada smart home|Rahman et al., 2021|
-|LDR-based lighting control |Mengatur lampu berdasarkan cahaya |Metode umum untuk efisiensi energi | Sari et al., 2020|
+|Sistem Smart Lighting (ESP32)|Sangat relevan untuk efisiensi energi.|Mewakili penggunaan framework Blynk yang populer.|Hamka dkk. (2025)|
+|Sistem Keamanan Android (XP) |Relevan untuk kontrol keamanan rumah. |Menggunakan metode pengembangan perangkat lunak terstruktur (XP). | Pramono & Muntahar (2024)|
 ```
 
 ---
@@ -104,19 +105,19 @@ Baseline Selection:
 
 Gunakan topik riset dari WS-02. Cari minimal 5 paper relevan menggunakan Google Scholar atau database lain.
 
-**Topik riset:** Smart Home Lampu Otomatis IoT
-**Query pencarian:** "smart home IoT PIR LDR lighting"
+**Topik riset:** Implementasi dan Optimalisasi Sistem Smart Home & Security berbasis IoT
+**Query pencarian:** ("smart home" OR "rumah pintar") AND ("IoT" OR "Internet of Things") AND ("NodeMCU" OR "ESP32")
 **Database:** Google Scholar
 
 | # | Study | Tahun | Method | Dataset | Result | Limitasi |
-| 1 | Rahman et al. | 2021 | PIR sensor | Data gerakan| Lampu otomatis| Tidak terdeteksi cahaya |
-| 2 | Sari et al.|2020 |LDR sensor |Intensitas cahaya |Hemat energi |Tidak deteksi manusia |
-| 3 |Putra et al. |2022 |PIR+LDR |Sensor real-time |Lebih akurat |Delay tinggi |
-| 4 |chen et al.|2023|IoT Smart Lighting |Data smart home |Efisien |Tidak Real-world |
-| 5 |Kumar et al. |2021 |MQTT IoT |Data komunikasi |Stabil |Latency tinggi |
+| 1 | Hamka dkk. | 2025 | R&D (ESP32 + Blynk) | Lampu, ESP32, Cloud Blynk | Respons cepat (73,4ms), kendali jarak jauh stabil.| Tergantung penuh pada internet & keamanan data minim. |
+| 2 | Hadiatullah dkk.|2025 |R&D (NodeMCU) |Relay, Wi-Fi, Mobile App |Respons < 10 detik, operasional 24 jam stabil. |UI aplikasi perlu perbaikan & isu interferensi Wi-Fi. |
+| 3 |Pramono & Muntahar |2024 |Extreme Programming (XP) |NodeMCU, CCTV, Android |Akurasi deteksi 95%, delay rata-rata 2 detik. |Belum optimal dalam manajemen konsumsi daya. |
+| 4 |Ferella dkk.|2025|Prototyping (Kamera)|ESP32-Cam, MQTT/HTTP |Deteksi gerakan & monitoring real-time berhasil. |Sudut pandang kamera terbatas (static).|
+| 5 |Agma |2025 |Implementasi Integrasi |Sensor DHT11, PIR, LDR |Otomasi suhu & lampu berhasil meningkatkan efisiensi.|Tidak merinci detail parameter latensi sistem.|
 
-**Pola yang terlihat — Metode dominan:** Sensor PIR dan LDR
-**Limitasi yang berulang:** Delay sistem dan akurasi sensor
+**Pola yang terlihat — Metode dominan:** Research and Development (R&D) dengan pengujian prototipe fungsional.
+**Limitasi yang berulang:** Keamanan privasi data (enkripsi), ketergantungan pada stabilitas sinyal Wi-Fi, dan optimasi daya perangkat.
 
 ---
 
@@ -126,14 +127,14 @@ Berdasarkan tabel di Latihan 1, identifikasi gap.
 
 | Jenis Gap | Ditemukan? | Gap Statement |
 |-----------|-----------|---------------|
-| Performance Gap | [ * ] Ya / [ ] Tidak | Waktu respon sistem masih lambat dan akurasi deteksi belum optimal |
-| Method Gap | [ ] Ya / [ ] Tidak | |
+| Performance Gap | [ * ] Ya / [ ] Tidak | Sebagian besar sistem mengalami peningkatan delay (latensi) saat beban jaringan tinggi atau sinyal lemah. |
+| Method Gap | [ * ] Ya / [ ] Tidak | Belum adanya penerapan algoritma keamanan (seperti AES atau Two-Factor Authentication) pada akses kontrol pintu/lampu. |
 | Data Gap | [ ] Ya / [ ] Tidak | |
-| Context Gap | [ * ] Ya / [ ] Tidak | Sistem belum diuji secara luas pada kondisi rumah nyata|
+| Context Gap | [ * ] Ya / [ ] Tidak | Implementasi lebih banyak diuji pada lingkungan ideal (kampus/lab), belum pada rumah dengan kendala listrik tidak stabil.|
 
-**Gap utama yang dipilih:** Performance Gap
+**Gap utama yang dipilih:** Method Gap (Security & Reliability)
 **Mengapa gap ini penting (bukan sekadar "belum ada yang meneliti")?**
-> Karena kinerja sistem seperti akurasi dan waktu respon sangat mempengaruhi keberhasilan smart home dalam menghemat energi dan kenyamanan pengguna. Jika sistem lambat atau salah deteksi, maka tujuan otomatisasi tidak tercapai.
+> Karena sistem rumah pintar mengontrol akses fisik (pintu/kamera). Jika hanya fokus pada fungsionalitas tanpa enkripsi kuat, sistem ini justru menjadi celah keamanan baru bagi peretas untuk menyusup ke privasi penghuni.
 ---
 
 ## Latihan 3 — Baseline Selection
@@ -142,11 +143,11 @@ Pilih 2 baseline dari literatur yang sudah dibaca.
 
 | # | Baseline | Mengapa Relevan | Mengapa Representatif | Apakah SOTA? | Sumber |
 |---|----------|----------------|----------------------|-------------|--------|
-| 1 | PIR-based system| Deteksi gerakan langsung | Digunakan di banyak penelitian | Tidak | Rahmat et al., 2021 |
-| 2 |LDR-based system |Deteksi cahaya |Metode umum smart lighting |Tidak |Sari et al., 2020 |
+| 1 | Smart Lighting ESP32| Fokus pada kecepatan respons kendali lampu.| Menggunakan Blynk, platform paling umum di riset IoT. | Ya (2025) | Hamka dkk., 2025|
+| 2 |Security System NodeMCU (XP) |Fokus pada akurasi deteksi keamanan. |Mewakili metode pengembangan software terstruktur (XP). |Ya (2024)|Pramono & Muntahar, 2024 |
 
 **Apakah pemilihan baseline ini bisa dianggap straw man?** [ ] Ya / [*] Tidak
-> Justifikasi: Baseline dipilih dari metode yang umum digunakan dan relevan dengan masalah, bukan metode yang sengaja dilemahkan.
+> Justifikasi: Baseline yang dipilih adalah penelitian terbaru (2024-2025) dengan tingkat akurasi tinggi (95%). Membandingkan riset baru dengan standar ini merupakan tantangan yang jujur, bukan membandingkan dengan teknologi usang.
 ---
 
 ## Refleksi
@@ -154,5 +155,5 @@ Pilih 2 baseline dari literatur yang sudah dibaca.
 > Apa perbedaan antara "belum ada yang meneliti ini" (klaim tanpa bukti) dengan research gap yang valid? Bagaimana cara membuktikan bahwa sebuah gap benar-benar ada?
 
 **Jawaban:**
-> Klaim "belum ada yang meneliti ini" seringkali tidak valid jika tidak didukung oleh pencarian literatur yang sistematis. Sedangkan research gap yang valid harus didasarkan pada bukti dari beberapa penelitian yang menunjukkan adanya keterbatasan atau kekurangan tertentu. Cara membuktikannya adalah dengan melakukan pencarian menggunakan database ilmiah, membandingkan beberapa paper, dan menunjukkan pola limitasi yang konsisten sehingga gap yang diambil benar-benar nyata dan dapat dipertanggungjawabkan secara ilmiah.
+> Perbedaan antara klaim tanpa bukti dengan research gap yang valid terletak pada penelusuran literatur yang terdokumentasi. Klaim "belum ada" tanpa data adalah asumsi, sedangkan gap yang valid dibuktikan dengan tabel perbandingan (Latihan 1) yang menunjukkan bahwa meskipun banyak penelitian dilakukan, ada aspek tertentu (seperti keamanan enkripsi) yang secara konsisten belum dipecahkan atau diabaikan oleh peneliti-peneliti sebelumnya.
 > ___________________________________________________
