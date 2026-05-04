@@ -67,25 +67,25 @@ Jika variabel tidak bisa di-map ke komponen apapun → arsitektur perlu didesain
 ```
 SYSTEM-EXPERIMENT MAPPING
 
-Research Question: ____________________
+Research Question: "Apakah implementasi protokol MQTT dengan enkripsi TLS/SSL pada ESP32 menghasilkan latency dan packet loss yang secara signifikan berbeda dibandingkan dengan protokol HTTP standar pada sistem smart home?"
 
 Variable → Component Mapping:
 | Variabel | Tipe | Komponen Sistem | Cara Manipulasi/Pengukuran |
 |----------|------|-----------------|---------------------------|
-|          | IV   |                 |                           |
-|          | DV   |                 |                           |
-|          | CV   |                 |                           |
+| Protokol Komunikasi | IV | Communication Wrapper Module | Mengganti header file atau class antara WiFiClient (HTTP) dan WiFiClientSecure (MQTT+TLS). |
+| Latensi & Packet Loss | DV | Telemetry/Logger Module | Fungsi millis() yang mencatat waktu kirim dan terima di dalam kode program.|
+| Stabilitas Wi-Fi (RSSI)| CV | Environment Handler | Pembacaan statis melalui fungsi WiFi.RSSI() yang dicatat setiap sesi.|
 
 4 Prinsip Desain:
-  [ ] Traceability — Setiap komponen bisa ditelusuri ke variabel
-  [ ] Variable Isolation — IV bisa diubah tanpa mengubah CV
-  [ ] Measurement Integration — Pengukuran DV built-in
-  [ ] Reproducibility — Setup bisa direkonstruksi
+  [ *] Traceability — Setiap komponen bisa ditelusuri ke variabel
+  [ *] Variable Isolation — IV bisa diubah tanpa mengubah CV
+  [ *] Measurement Integration — Pengukuran DV built-in
+  [ *] Reproducibility — Setup bisa direkonstruksi
 
 Experimental Setup:
-  Input data     : ____________________
-  Parameter      : ____________________
-  Output format  : ____________________
+  Input data     : Perintah kontrol (misal: "ON/OFF") yang dikirim sebanyak 100 kali per protokol.
+  Parameter      : Frekuensi Wi-Fi 2.4GHz, Jarak 5 meter, ESP32 Clock 160MHz.
+  Output format  : Tabel CSV (Timestamp, Protocol_Type, Latency_ms, Success_Status).
 ```
 
 ---
@@ -94,15 +94,15 @@ Experimental Setup:
 
 Gunakan RQ dan variabel dari WS-05. Petakan ke komponen sistem.
 
-**RQ:** __________________________________________________
+**RQ:** "Apakah penggunaan algoritma enkripsi AES-128 pada NodeMCU meningkatkan latensi secara signifikan dibandingkan tanpa enkripsi?"
 
 | Variabel | Tipe | Komponen Sistem | Cara Manipulasi / Pengukuran |
 |----------|------|-----------------|---------------------------|
-| *Contoh: Jenis model* | *IV* | *Modul classifier (swap RF ↔ CNN)* | *Ganti config `model_type`* |
-| | DV | | |
-| | CV | | |
+|Enkripsi AES-128| IV | Encryption Engine (Library) | Menggunakan Feature Toggle (Boolean isEncrypted = true/false) dalam kode.|
+|Latensi | DV |Execution Timer Module |Mencatat selisih waktu sebelum fungsi encrypt() dan sesudah decrypt(). |
+|Payload Size | CV |Data Generator |Ukuran pesan dikunci pada 128 bit untuk semua percobaan. |
 
-**Apakah semua variabel bisa di-map?** [ ] Ya / [ ] Tidak
+**Apakah semua variabel bisa di-map?** [ *] Ya / [ ] Tidak
 > Jika tidak, komponen apa yang perlu ditambahkan? _________
 
 ---
@@ -113,14 +113,14 @@ Evaluasi desain sistem terhadap 4 prinsip.
 
 | Prinsip | Status | Bukti / Penjelasan |
 |---------|--------|-------------------|
-| Traceability | *Contoh: ✅ — setiap modul punya label variabel* | |
-| Modularity | | |
-| Controllability | | |
-| Measurability | | |
+| Traceability | ✅ | Modul enkripsi dipisahkan dari modul koneksi, memudahkan pelacakan asal delay.|
+| Modularity | ✅ | Algoritma AES bisa diganti ke ChaCha20 atau Off tanpa membongkar seluruh program.|
+| Controllability | ✅ | Parameter kunci (key) dan ukuran data diatur di bagian config.h.|
+| Measurability | ✅ |Sistem mencatat waktu eksekusi dalam mikrosekon (µs) untuk akurasi tinggi. |
 
-**Prinsip mana yang paling sulit dipenuhi?** _______________
+**Prinsip mana yang paling sulit dipenuhi?** Variable Isolation.
 **Strategi untuk mengatasinya:**
-> ___________________________________________________
+> Menggunakan lingkungan jaringan yang terisolasi (Router khusus tanpa perangkat lain) agar noise jaringan tidak dianggap sebagai delay dari enkripsi.
 
 ---
 
@@ -130,14 +130,14 @@ Jika sistem memiliki 3 komponen utama, rencanakan ablation study.
 
 | Kondisi | Komponen A | Komponen B | Komponen C | Hasil yang Diharapkan |
 |---------|-----------|-----------|-----------|----------------------|
-| Full | *Contoh: ✅ CNN* | *Contoh: ✅ Temporal features* | *Contoh: ✅ Z-score norm* | *Baseline penuh* |
-| – A | ❌ (ganti RF) | ✅ | ✅ | |
-| – B | ✅ | ❌ (tanpa temporal) | ✅ | |
-| – C | ✅ | ✅ | ❌ (tanpa normalisasi) | |
+| Full |  ✅ Aktif| ✅Aktif | ✅ Aktif| Keamanan maksimal, namun latensi tertinggi |
+| – A | ❌ Matikan | ✅Aktif | ✅Aktif |Latensi turun drastis (membuktikan beban AES).|
+| – B | ✅Aktif | ❌ Matikan | ✅ Aktif| Bandwidth naik, namun beban CPU turun.|
+| – C | ✅ Aktif| ✅Aktif | ❌Matikan| Penghematan waktu handshake awal.|
 
-**Komponen mana yang diprediksi paling berkontribusi?** _____
+**Komponen mana yang diprediksi paling berkontribusi?** Komponen A (AES).
 **Mengapa?**
-> ___________________________________________________
+> Karena proses enkripsi/dekripsi melibatkan perhitungan matematis intensif pada CPU mikrokontroler yang memiliki resource terbatas.
 
 ---
 
@@ -146,5 +146,8 @@ Jika sistem memiliki 3 komponen utama, rencanakan ablation study.
 > Apa risiko jika sistem dibangun seperti produk (monolitik, fitur lengkap) lalu baru dilakukan eksperimen? Mengapa arsitektur modular penting untuk riset?
 
 **Jawaban:**
-> ___________________________________________________
-> ___________________________________________________
+> Risiko utama dari sistem monolitik adalah Confounding Variables (variabel pengganggu). Jika sistem monolitik terasa lambat, peneliti akan sulit menentukan apakah kelambatan itu disebabkan oleh enkripsi, antarmuka grafis (UI), atau proses latar belakang lainnya karena semuanya saling mengunci (tightly coupled).
+> Arsitektur modular penting karena:
+Isolasi Variabel: Kita bisa mematikan fitur non-riset (misal: tampilan LCD) agar tidak mengganggu pengukuran variabel utama.
+Reproduktifitas: Peneliti lain bisa mengambil modul eksperimen Anda saja tanpa harus mengunduh seluruh "produk" Anda yang kompleks.
+Fleksibilitas: Memungkinkan Ablation Study (Latihan 3) untuk melihat kontribusi tiap bagian secara adil.
