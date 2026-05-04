@@ -67,34 +67,33 @@ Jika rantai ini tidak lengkap, RQ belum mature. Bi-directional: RQ yang tidak bi
 ```
 RQ-CONTRIBUTION-HYPOTHESIS
 
-Gap Statement  : ____________________
+Gap Statement  : Mayoritas sistem smart home berbasis NodeMCU/ESP32 saat ini memiliki kerentanan pada keamanan data (lack of encryption) dan penurunan reliabilitas (latensi tinggi) saat koneksi internet tidak stabil.
 
 Research Question:
-  Tipe         : [ ] Comparison  [ ] Improvement  [ ] Exploratory
-  Formulasi    : ____________________
-  Variabel IV  : ____________________
-  Variabel DV  : ____________________
-  Metrik       : ____________________
-  Dataset      : ____________________
-  Baseline     : ____________________
-
+  Tipe         : [ * ] Comparison  [ ] Improvement  [ ] Exploratory
+  Formulasi    : "Apakah implementasi protokol MQTT dengan enkripsi TLS/SSL pada ESP32 menghasilkan latency dan packet loss yang secara signifikan berbeda dibandingkan dengan protokol HTTP standar pada sistem smart home?"
+  Variabel IV  : Jenis Protokol Komunikasi (MQTT + TLS vs. HTTP standar).
+  Variabel DV  : Network Performance (Latency & Packet Loss).
+  Metrik       : Milidetik (ms) untuk latensi dan persentase (%) untuk packet loss.
+  Dataset      : Pengujian pada jaringan Wi-Fi lokal dengan simulasi beban bandwidth.
+  Baseline     : Sistem IoT berbasis HTTP tanpa enkripsi (seperti pada model umum Hamka dkk., 2025).
 Quality Check RQ:
-  [ ] Variabel spesifik
-  [ ] Metrik jelas
-  [ ] Baseline ada
-  [ ] Konteks disebutkan
-  [ ] Memerlukan eksperimen (bukan hanya survei literatur)
+  [ * ] Variabel spesifik
+  [ * ] Metrik jelas
+  [ * ] Baseline ada
+  [ * ] Konteks disebutkan
+  [ * ] Memerlukan eksperimen (bukan hanya survei literatur)
 
 Contribution Statement:
-  Apa yang baru diketahui : ____________________
-  Jenis kontribusi        : [ ] Improvement  [ ] Comparison  [ ] Novel approach
-  Gap yang diisi          : ____________________
+  Apa yang baru diketahui : Karakteristik performa keamanan data pada mikrokontroler daya rendah (ESP32) saat menggunakan enkripsi berlapis.
+  Jenis kontribusi        : [ ] Improvement  [ * ] Comparison  [ ] Novel approach
+  Gap yang diisi          : Mengisi celah keamanan (method gap) dan reliabilitas performa (performance gap) yang diidentifikasi di WS-03.
 
 Hypothesis Pair:
-  H₀ : ____________________
-  H₁ : ____________________
-  Threshold              : ____________________
-  Justifikasi threshold  : ____________________
+  H₀ : Tidak ada perbedaan signifikan pada rata-rata latensi antara penggunaan protokol MQTT+TLS dan HTTP standar pada ESP32.
+  H₁ : Penggunaan MQTT+TLS memberikan latensi yang lebih tinggi secara signifikan dibandingkan HTTP standar, namun tetap berada di bawah ambang batas toleransi real-time.
+  Threshold              : p-value < 0.05 (Signifikansi statistik) dan Latensi < 200ms (Batas nyaman user).
+  Justifikasi threshold  : Latensi di atas 200ms dianggap tidak lagi real-time untuk kontrol perangkat rumah (ITU-T G.114).
 ```
 
 ---
@@ -103,25 +102,24 @@ Hypothesis Pair:
 
 Gunakan gap yang ditemukan di WS-03. Transformasikan menjadi Research Question.
 
-**Gap dari WS-03:** ____________________________________
+**Gap dari WS-03:** Kurangnya aspek keamanan enkripsi pada kontrol jarak jauh IoT dan ketergantungan pada stabilitas internet.
 
 **RQ versi pertama (tulis bebas):**
-> ___________________________________________________
+> Bagaimana pengaruh keamanan enkripsi terhadap kecepatan respon lampu pintar?
 
 **Evaluasi RQ:**
 
 | Komponen | Ada? | Isi |
 |----------|------|-----|
-| Metode spesifik | *Contoh: Ya — CNN vs RF* | |
-| Metrik terukur | | |
-| Baseline | | |
+| Metode spesifik | Belum ada (perlu sebutkan jenis enkripsi/protokol).| |
+| Metrik terukur | Sudah ada (kecepatan respon). | |
+| Baseline | Belum ada. | |
 | Dataset/konteks | | |
 
-**Tipe RQ:** [ ] Comparison / [ ] Improvement / [ ] Exploratory
+**Tipe RQ:** [ ]*  Comparison / [ ] Improvement / [ ] Exploratory
 
 **RQ versi revisi (setelah evaluasi):**
-> ___________________________________________________
-
+> "Apakah penggunaan algoritma enkripsi AES-128 pada komunikasi NodeMCU-Blynk meningkatkan latensi secara signifikan dibandingkan dengan sistem tanpa enkripsi?"
 ---
 
 ## Latihan 2 — Hypothesis Pair
@@ -130,14 +128,14 @@ Rumuskan pasangan hipotesis dari RQ di Latihan 1.
 
 | Komponen | Isi |
 |----------|-----|
-| H₀ | *Contoh: Tidak ada perbedaan signifikan F1-Score antara CNN dan RF pada dataset CIC-MalMem-2022* |
-| H₁ | |
-| Metrik | |
-| Threshold | |
-| Justifikasi threshold | |
+| H₀ | Tidak ada perbedaan signifikan pada response time (ms) antara sistem kontrol dengan AES-128 dan tanpa enkripsi. |
+| H₁ | Penerapan enkripsi AES-128 meningkatkan response time lebih dari 50ms dibandingkan tanpa enkripsi. |
+| Metrik | Response Time (Milidetik). |
+| Threshold | 50ms (Alpha 0.05). |
+| Justifikasi threshold | Tambahan waktu 50ms adalah batas maksimal overhead komputasi agar user tidak merasakan jeda (perceived lag). |
 
-**Apakah hipotesis ini falsifiable?** [ ] Ya / [ ] Tidak
-> Bagaimana cara membuktikannya salah? ___________________
+**Apakah hipotesis ini falsifiable?** [ *] Ya / [ ] Tidak
+> Bagaimana cara membuktikannya salah? Melakukan eksperimen sebanyak 100 kali percobaan; jika rata-rata selisih waktu ternyata kurang dari 50ms, maka H₁ ditolak.
 
 ---
 
@@ -147,14 +145,14 @@ Lengkapi rantai dari RQ hingga metode analisis.
 
 | Tahap | Isi |
 |-------|-----|
-| RQ | *Contoh: Apakah CNN menghasilkan F1-Score lebih tinggi dari RF...* |
-| Variable (IV) | *Contoh: Jenis algoritma (CNN vs RF)* |
-| Variable (DV) | |
-| Metric | |
-| Data source | |
-| Analysis method | |
+| RQ | Apakah AES-128 meningkatkan latensi secara signifikan pada NodeMCU? |
+| Variable (IV) | Penggunaan Algoritma Enkripsi (Off vs AES-128). |
+| Variable (DV) | Latensi transmisi data. |
+| Metric | Rata-rata waktu (ms) dari tekan tombol hingga lampu menyala. |
+| Data source | Log dari serial monitor Arduino IDE dan Timestamp aplikasi Blynk. |
+| Analysis method | Independent T-Test (untuk membandingkan dua rata-rata kelompok data). |
 
-**Apakah rantai lengkap?** [ ] Ya / [ ] Tidak
+**Apakah rantai lengkap?** [* ] Ya / [ ] Tidak
 > Jika tidak, tahap mana yang perlu direvisi? ______________
 
 ---
@@ -163,6 +161,6 @@ Lengkapi rantai dari RQ hingga metode analisis.
 
 > Ambil satu judul skripsi/paper yang pernah dibaca. Coba ekstrak RQ-nya. Apakah RQ tersebut memenuhi semua komponen (metode, metrik, baseline, konteks)? Jika tidak, apa yang hilang?
 
-**Judul:** _____________________________________________
-**RQ yang diekstrak:** __________________________________
-**Komponen yang hilang:** _______________________________
+**Judul:** Implementasi Keamanan Rumah Pintar Berbasis Android Dengan Teknologi IoT Dan NodeMCU ESP8266 (Pramono & Muntahar, 2024)
+**RQ yang diekstrak:** Bagaimana merancang sistem keamanan rumah dengan akurasi deteksi tinggi menggunakan metode Extreme Programming?
+**Komponen yang hilang:** Baseline dan Metrik Perbandingan. Paper tersebut lebih bersifat Engineering (membangun sistem) daripada Research karena tidak membandingkan efektivitas metodenya dengan metode atau sistem lain secara eksperimental (Comparison).
