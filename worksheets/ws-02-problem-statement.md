@@ -68,31 +68,31 @@ PROBLEM STATEMENT BUILDER
 
 Domain & Konteks
   Domain   : Internet of Things (IoT) Smart Home 
-  Konteks  : Sistem lampu otomatis rumah menggunakan sensor RIP DAN LDR berbasis mikrokontroler 
+  Konteks  : Sistem rumah pintar berbasis IoT untuk meningkatkan efisiensi energi dan keamanan rumah
 System Context
-  Input       : Sensor RIP untuk deteksi gerakan dan sensor LDR untuk deteksi intensitas cahaya 
-  Process     : Mikrokontroler membaca data sensor dan menentukan kondisi lampu ON/OFF 
-  Output      : Lampu otomatis menyala atau mati
-  Outcome     : Penghematan energi listrik dan kemudahan pengguna 
-  Constraints : Akurasi sensor, delay respon sistem, kondisi lingkungan cahaya
-  Stakeholders: Pengguna rumah, teknisi IoT, dan peneliti
+  Input       : Data dari sensor (gerak, suhu), perintah dari aplikasi mobile
+  Process     : Pengolahan data oleh microcontroller (ESP32) dan pengiriman melalui jaringan internet
+  Output      : Kontrol perangkat (lampu, pintu, kipas) dan notifikasi real-time
+  Outcome     : Peningkatan kenyamanan, efisiensi energi (12–15%), dan keamanan rumah
+  Constraints : Koneksi internet tidak stabil, risiko keamanan data, biaya implementasi tinggi
+  Stakeholders: Pengguna rumah, pengembang sistem IoT, penyedia layanan internet
 
 Fenomena → Problem
-  Fenomena yang diamati             : Lampu rumah sering menyala terus meskipun tidak ada aktivitas
-  Gejala (symptom) yang terukur     : Konsumsi listrik meningkat dan lampu aktif lebih dari 12 jam per hari
-  Masalah yang didiagnosis          : Sistem lampu masih manual dan sensor belum bekerja secara optimal 
-  Masalah riset (researchable)      : Belum diketahui tingkat akurasi dan waktu respon kombinasi sensor PIR dan LDR pada sistem smart home lampu otomatis
-  Variabel yang terukur             : Akurasi deteksi sensor, waktu respon sistem, konsumsi energi listrik
+  Fenomena yang diamati             : Sistem smart home berbasis IoT mampu meningkatkan efisiensi energi dan keamanan rumah
+  Gejala (symptom) yang terukur     : Penurunan konsumsi listrik sebesar 12–15%. Respon sistem melambat saat koneksi internet tidak stabil
+  Masalah yang didiagnosis          : Ketergantungan sistem terhadap koneksi internet menyebabkan performa dan keandalan sistem tidak stabil
+  Masalah riset (researchable)      : Belum ada pendekatan optimal untuk meningkatkan keandalan sistem smart home IoT agar tetap responsif dan stabil pada kondisi jaringan internet yang tidak stabil
+  Variabel yang terukur             : Waktu respon sistem (detik), Stabilitas koneksi (%), Tingkat keberhasilan pengiriman notifikasi (%), Konsumsi energi (%)
 
 Problem Quality Check
-  [*] Clarity — Apakah satu orang membaca akan paham?
-  [*] Measurability — Apakah ada metrik kuantitatif?
-  [*] Relevance — Apakah penting untuk domain?
-  [*] Testability — Apakah bisa gagal?
-  [*] Impact — Apakah ada kontribusi jika terjawab?
+  [*] Clarity — jelas membahas keandalan sistem IoT
+  [*] Measurability — ada metrik (respon, energi, notifikasi)
+  [*] Relevance — penting dalam pengembangan IoT smart home
+  [*] Testability — bisa diuji dengan eksperimen jaringan
+  [*] Impact — berdampak pada penggunaan luas teknologi
 
 Problem Statement (1 paragraf):
-  Penggunaan lampu rumah yang manual menyebabkan pemborosan listrik karena lampu sering dibiarkan menyala meskipun tidak ada aktivitas. Sistem smart home berbasis IoT ini dapat digunakan untuk otomatisasi lampu, namun kinerja sistem dalam mendeteksi gerakan dan kondisi cahaya belum diketahui pasti. Oleh karena itu dilakukan penelitian yang bertujuan menganalisis tingkat akurasi dan waktu respon kombinassi sensor RIP dan LDR pada sistem smart home lampu otomatis berdasarkan parametr akurasi deteksi, waktu respon, dan konsumsi energi listrik untuk meningkatkan efisiensi penggunaan energi pada rumah pintar. 
+  Sistem smart home berbasis Internet of Things (IoT) telah terbukti mampu meningkatkan efisiensi energi dan keamanan rumah melalui otomatisasi dan kontrol jarak jauh, dengan penghematan energi mencapai 12–15%. Namun, kinerja sistem masih sangat bergantung pada kestabilan koneksi internet, sehingga menyebabkan keterlambatan respon dan notifikasi ketika jaringan tidak stabil. Hal ini menunjukkan adanya keterbatasan dalam keandalan sistem yang dapat menghambat adopsi secara luas. Oleh karena itu, diperlukan penelitian untuk mengidentifikasi dan menguji pendekatan yang dapat meningkatkan stabilitas dan responsivitas sistem smart home IoT dalam kondisi jaringan yang tidak optimal dengan menggunakan metrik seperti waktu respon, keberhasilan notifikasi, dan efisiensi energi
 ```
 
 ---
@@ -101,15 +101,15 @@ Problem Statement (1 paragraf):
 
 Pilih satu topik di bidang TI yang diminati. Transformasikan melalui 5 tahap Problem Formation Model.
 
-**Topik awal:** Smart Home Lampu Otomatis Berbasis IoT 
+**Topik awal:** Smart Home Berbasis IoT 
 
 | Tahap | Hasil |
 |-------|-------|
-| Reality | Lampu rumah sering lupa dimatikan saat tidak ada aktivitas  |
-| Observed Issue (Symptom) | Lampu menyala lebih dari 12 jam per hari |
-| Diagnosed Problem (Root Cause) | Tidak ada sistem otomatis berbasis sensor untuk mengontrol lampu |
-| Researchable Problem | Belum ada analisis akurasi sensor RIP dan LDR pada smart home lampu otomatis |
-| Measurable Variable | Akurasi deteksi, waktu respon, konsumsi listrik |
+| Reality | Sistem smart home digunakan untuk otomatisasi rumah |
+| Observed Issue (Symptom) | Sistem lambat saat internet tidak stabil|
+| Diagnosed Problem (Root Cause) | Ketergantungan tinggi pada jaringan internet|
+| Researchable Problem | Belum ada solusi untuk menjaga performa sistem saat jaringan tidak stabil |
+| Measurable Variable | Waktu respon, stabilitas sistem, notifikasi |
 
 **Apakah terjebak solution-first thinking?** [ ] Ya / [ * ] Tidak
 > Jika ya, kembali ke tahap mana? Tidak ada 
@@ -122,14 +122,14 @@ Gambarkan konteks sistem dari masalah riset di Latihan 1.
 
 | Komponen | Deskripsi |
 |----------|----------|
-| Input | Data sensor RIP dan LDR |
-| Process | Mikrokontroler mengolah data sensor dan menentukan kondisi lampu |
-| Output | Lampu otomatis ON/OFF|
-| Outcome | Penghematan energi listrik |
-| Constraints | Sensitivitas sensor, delay sistem, kondisi lingkungan |
-| Stakeholders | Pengguna rumah dan peneliti sistem IoT|
+| Input | Data sensor & perintah user|
+| Process | Pengolahan oleh microcontroller & jaringan |
+| Output | Kontrol perangkat & notifikasi|
+| Outcome | Efisiensi energi & keamanan |
+| Constraints | Internet, keamanan data, biaya|
+| Stakeholders | User, developer, provider|
 
-**Komponen mana yang paling relevan dengan masalah riset?** Process dan Input Sensor 
+**Komponen mana yang paling relevan dengan masalah riset?** Process & Constraints (karena masalah ada di jaringan/internet)
 
 ---
 
@@ -139,16 +139,16 @@ Evaluasi problem statement yang sudah dibuat menggunakan 5 kriteria.
 
 | Kriteria | Skor (1-5) | Justifikasi |
 |----------|-----------|-------------|
-| Clarity | 5 | Masalah dijelaskan dengan jelas dan spesifik |
-| Measurability | 5 | Variabel dapat diukur secara kuantitatif |
-| Relevance | 5 | Berkaitan langsung dengan smart home IoT|
-| Testability | 4 | Dapat diuji melalui ekperimen sistem |
-| Impact | 5 | Memberikan manfaat penghematan energi|
+| Clarity | 4 | Sudah jelas, bisa diperjelas pada skenario jaringan |
+| Measurability | 5 | Ada metrik kuantitatif |
+| Relevance | 5 | Sangat penting di IoT |
+| Testability | 5 | Bisa diuji eksperimen|
+| Impact | 4 | Berdampak besar pada adopsi teknologi|
 
-**Skor total:** 24 / 25
+**Skor total:** 23 / 25
 
 **Problem statement versi final (1 paragraf):**
-> Penggunaan lampu rumah yang manual menyebabkan pemborosan energi listrik karena lampu lupa dimatikan. Sistem smart home berbasis IoT dengan sensor RIP dan LDR dapat mengatasi permasalahan tersebut, namun tingkat akurasi deteksi waktu respon sistem belum diketahui secara pesti. Penelitian ini bertujuan untuk menganalisis kinerja sistem smart home berdasarkan parameter akurasi deteksi sensor, waktu respon sistem, dan konsumsi energi listrik untuk meningkatkan efisiensi penggunaan energi pada lingkungan rumah.
+> Ketergantungan sistem smart home berbasis IoT terhadap koneksi internet yang tidak stabil menyebabkan penurunan kinerja berupa keterlambatan respon dan notifikasi, sehingga diperlukan penelitian untuk mengembangkan dan menguji pendekatan yang mampu meningkatkan keandalan sistem dalam kondisi jaringan terbatas menggunakan metrik waktu respon, stabilitas sistem, dan efisiensi energi.
 
 ---
 
@@ -157,5 +157,9 @@ Evaluasi problem statement yang sudah dibuat menggunakan 5 kriteria.
 > Bandingkan "masalah" yang biasa ditemui saat coding (bug, error) dengan masalah riset. Apa perbedaan fundamental dalam cara mendefinisikan dan mendekati keduanya?
 
 **Jawaban:**
-> Masalah pada saat coding biasanya berupa bug, error sintaks, atau fitur yang tidak berjalan sesuai fungsi sehingga fokusnya adalah memperbaiki sistem agar dapat berjalan dengan benar.Dalam coding, solusi biasanya langsung diterapkan untuk memperbaiki kesalahan
-> Masalah riset berfokus pada menemukan kesenjangan pengetahuan yang belum diketahui dan harus dibuktikan melalui eksperimen. Dalam riset diperlukan proses analisis mulai dari fenomena, gejala, akar masalah, hingga variabel terukur sebelum menentukan solusi. Oleh karena itu, masalah riset lebih terstruktur, terukur, dan harus dapat diuji secara ilmiah.
+> Engineering (coding):
+Fokus pada memperbaiki error
+Contoh: “lampu tidak menyala → perbaiki program”
+Research:
+Fokus pada mencari penyebab mendasar
+Contoh: “Mengapa sistem gagal saat jaringan tidak stabil?”. “Bagaimana meningkatkan keandalan sistem?”
