@@ -70,22 +70,22 @@ EXECUTION PLAN
 
 | Run # | Skenario | Seed | Parameter | Status | Waktu | Output File |
 |-------|----------|------|-----------|--------|-------|-------------|
-| 1     |          |      |           |        |       |             |
-| 2     |          |      |           |        |       |             |
-| 3     |          |      |           |        |       |             |
+| 1-100     |Baseline (Plaintext)  | 42 | Payload=16B, QoS=0, RSSI=-60dBm  | Planned |09:00 WIB|log_baseline_plaintext.csv|
+| 101-200     | Intervensi (AES-128) | 42| Payload=16B, QoS=0, RSSI=-60dBm | Planned |10:00 WIB| log_intervensi_aes128.csv |
+|     |          |      |           |        |       |             |
 | ...   |          |      |           |        |       |             |
 
-Jumlah runs per skenario : ____
-Total runs               : ____
+Jumlah runs per skenario : 100
+Total runs               : 200
 
 DATA LOG (per run):
-  Run ID    : ____________________
-  Timestamp : ____________________
-  Skenario  : ____________________
-  Input     : ____________________
-  Output    : ____________________
-  Anomali   : ____________________
-  Catatan   : ____________________
+  Run ID    : TX-AES128-045
+  Timestamp : 2026-06-21T10:15:32.451Z
+  Skenario  : Intervensi (AES-128 Enabled)
+  Input     : 0x41 0x42 0x43 0x44 0x45 0x46 0x47 0x48 0x49 0x4A 0x4B 0x4C 0x4D 0x4E 0x4F 0x50 (16-Byte data string "ABCDEFGHIJKLMNOP" dalam bentuk array heksadesimal)
+  Output    : RTT = 18.42 ms (Hasil kalkulasi konversi dari selisih waktu balik sinyal konfirmasi: 18420 mikro secon)
+  Anomali   : None (Normal Transmission)
+  Catatan   : Kestabilan daya tangkap antena Wi-Fi tercatat konstan pada indikator RSSI -59 dBm.
 ```
 
 ---
@@ -96,15 +96,15 @@ Susun execution plan untuk eksperimen Anda. Tentukan skenario, jumlah run, dan s
 
 | Run # | Skenario | Seed | Parameter Kunci | Status |
 |-------|----------|------|----------------|--------|
-| *1* | *Contoh: BERT-base, DS-1* | *42* | *lr=2e-5, epoch=10* | *Planned* |
-| *2* | *BERT-base, DS-1* | *123* | *lr=2e-5, epoch=10* | *Planned* |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+| 1 | Baseline (Plaintext)|  42 | Payload = 16B, QoS = 0, Wi-Fi Ch = 11 | Completed|
+| 100 | Baseline (Plaintext) | 42 | Payload = 16B, QoS = 0, Wi-Fi Ch = 11 | Completed |
+| 101 | Intervensi (AES-128)| 42 | Payload = 16B, QoS = 0, Wi-Fi Ch = 11, Key Length = 128-bit | Completed |
+| 200 | Intervensi (AES-128) | 42 | Payload = 16B, QoS = 0, Wi-Fi Ch = 11, Key Length = 128-bit | Completed |
+|  | | | | |
 
-**Total skenario:** ____
-**Run per skenario:** ____
-**Total run keseluruhan:** ____
+**Total skenario:** 2 (Plaintext vs AES-128)
+**Run per skenario:** 100 kali pengiriman paket data
+**Total run keseluruhan:** 200 rangkaian data hantar
 
 ---
 
@@ -115,25 +115,25 @@ Desain format data log untuk eksperimen Anda. Tentukan field apa saja yang akan 
 **Identitas:**
 | Field | Contoh |
 |-------|--------|
-| Run ID | *run-001* |
-| Timestamp | *2025-03-15T10:30:00* |
-| | |
+| Run ID | TRIAL-087 |
+| Timestamp | 2026-06-21T09:22:15.102Z |
+| Group ID | 0 (untuk Baseline/Plaintext) atau 1 (untuk Intervensi/AES-128) |
 
 **Konfigurasi:**
 | Field | Contoh |
 |-------|--------|
-| Seed | *42* |
-| Code version | *commit abc1234* |
-| | |
+| Seed | 42 (Digunakan sebagai static Initialization Vector / IV pada blok cipher) |
+| Code version | firmware-v1.0.4-commit-8ab43e |
+| RSSI Level | -60 dBm (Indikator kekuatan sinyal Wi-Fi lokal) |
 
 **Hasil:**
 | Metrik | Tipe Data | Range Valid |
 |--------|----------|-------------|
-| *Contoh: Accuracy* | *float* | *0.0 – 1.0* |
-| | | |
-| | | |
+| Time_Sent | unsigned long | 0 - 4.294.967.295 |
+| Time_ACK | unsigned long| 0 - 4.294.967.295|
+| Round Trip Time (RTT) | float | 1.0 ms - 1000.0 ms |
 
-**Format output:** [ ] CSV / [ ] JSON / [ ] Database / [ ] Lainnya: ____
+**Format output:** [ x ] CSV / [ ] JSON / [ ] Database / [ ] Lainnya: ____
 
 ---
 
@@ -143,10 +143,10 @@ Rencanakan bagaimana menangani anomali. Untuk setiap jenis, tentukan langkah yan
 
 | Jenis Anomali | Contoh | Tindakan |
 |---------------|--------|----------|
-| Run gagal (crash) | *Contoh: OOM pada batch_size=64* | *Contoh: Dokumentasi, re-run batch_size=32, catat perubahan* |
-| Hasil ekstrem | | |
-| Waktu eksekusi anomali | | |
-| Inkonsistensi dengan run lain | | |
+| Run gagal (crash) | Perangkat NodeMCU mengalami Hardware Watchdog Timer (WDT) Reset di tengah jalan akibat kegagalan alokasi memori dinamis (pointer leak) saat fungsi enkripsi diulang terus menerus. | Dokumentasikan pesan kesalahan (stack trace) dari serial monitor, lakukan pembersihan heap memory pada kode program, lakukan hard reset hardware, lalu ulangi pengerjaan dari baris data ke-1 untuk skenario tersebut. |
+| Hasil ekstrem | Durasi RTT melompat secara acak hingga 2450 ms pada satu paket data (rata-rata normal berada di kisaran 15 - 20 ms) | Jangan dihapus secara sepihak. Periksa log pada broker Mosquitto. Jika lonjakan terjadi akibat intervensi retransmisi paket Wi-Fi pada lapisan MAC (packet drop), tetap simpan data tersebut dan beri label penanda INTERFERENCE_ANOMALY untuk dijelaskan sebagai variabilitas alami pada bab analisis. |
+| Waktu eksekusi anomali | Nilai penanda waktu micros() mengalami kondisi batas overflow (kembali ke angka 0 karena melewati batas tampung variabel 32-bit setelah menyala aktif kurang lebih 71 menit). | Terapkan logika penanganan overflow pada script parser Python host: jika Time_ACK < Time_Sent, maka rumus diubah menjadi: Delta T = ((4.294.967.295 Time_Sent) + Time_ACK) / 1000.0 Catat kejadian konversi ini ke log metadata.|
+| Inkonsistensi dengan run lain | Nilai deviasi standar (standard deviation) pada pengujian kelompok AES-128 bernilai lebih kecil secara tidak wajar dibandingkan kelompok Plaintext. | Lakukan pengecekan fisik terhadap suhu operasional chip NodeMCU ESP8266 dan pastikan voltase catu daya dari port USB PC host konstan berada di angka 4.9V - 5.0V. Lakukan re-run skenario jika terbukti ada ketimpangan daya listrik selama eksekusi. |
 
 **Prinsip:** Detect → Investigate → Document → Decide
 
@@ -157,6 +157,6 @@ Rencanakan bagaimana menangani anomali. Untuk setiap jenis, tentukan langkah yan
 > Pernahkah Anda melaporkan hasil riset/tugas dari single run? Apa risikonya? Bagaimana multiple run mengubah kepercayaan terhadap hasil?
 
 **Pengalaman sebelumnya:**
-> ___________________________________________________
+> Ya, pada pengerjaan proyek sistem tertanam (embedded system) fungsional sebelumnya, saya sering kali hanya menguji pengiriman data kendali satu kali saja. Jika perintah "Lampu ON" dikirim sekali dan relay berbunyi klik, maka sistem langsung saya klaim berhasil dan responsif. Risikonya adalah angka performa tersebut sangat bias dan tidak valid secara ilmiah, karena mengabaikan faktor fluktuasi stabilitas gelombang radio, beban komputasi mikroprosesor, dan potensi penumpukan memori (memory overflow) yang baru muncul setelah ratusan kali iterasi eksekusi.
 **Yang akan dilakukan berbeda:**
-> ___________________________________________________
+> Untuk riset komparatif keamanan siber ini, saya menerapkan prinsip Multiple Runs dengan mengirimkan 100 paket data per skenario secara berkelanjutan. Pendekatan pengumpulan data dalam jumlah sampel besar ini mengubah total tingkat kepercayaan riset. Reviewer dan pembaca tidak hanya disajikan satu angka mutlak, melainkan distribusi data yang valid berupa nilai rata-rata (Mean), variabilitas deviasi standar, serta visualisasi batas galat (error bar), sehingga pembuktian overhead penalti latensi akibat enkripsi AES-128 dapat dipertanggungjawabkan secara matematis melalui uji statistik t-test.
