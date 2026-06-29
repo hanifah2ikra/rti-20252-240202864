@@ -65,25 +65,26 @@ Keduanya **saling melengkapi**:
 ```
 RESULT PRESENTATION PLAN
 
-Research Question : ____________________
-Metrik Utama      : ____________________
+Research Question : Apakah penerapan enkripsi AES-128 pada   firmware NodeMCU ESP8266 meningkatkan durasi waktu Round Trip Time (RTT) paket data secara signifikan dibandingkan dengan pengiriman data tanpa enkripsi (plaintext)?
+Metrik Utama      : Round Trip Time (RTT) dalam satuan milidetik (ms)
 
 Tabel Hasil:
 | Skenario | Metrik 1 (mean ± std) | Metrik 2 (mean ± std) | n |
 |----------|----------------------|----------------------|---|
-|          |                      |                      |   |
+| Baseline (Plaintext) | 15.24 ± 0.42 ms | 100% (100/100) | 100 |
+| Intervensi (AES-128) | 18.42 ± 1.15 ms | 98% (98/100) | 98 |
 
 Visualisasi yang Direncanakan:
 | # | Jenis Grafik | Pesan Utama | Metrik |
 |---|-------------|-------------|--------|
-| 1 |             |             |        |
-| 2 |             |             |        |
+| 1 | Bar Chart + Error Bar | Memperlihatkan biaya performa (overhead) rata-rata akibat proses enkripsi matematika AES-128 dibanding Plaintext. | RTT (Mean ± Std) |
+| 2 | Box Plot / Violin Plot | Menampilkan sebaran data, kepadatan distorsi jitter, dan visualisasi outlier ekstrem akibat interferensi nirkabel nyata | Distribusi RTT seluruh run |
 
 Bias Check:
-  [ ] Y-axis mulai dari 0 (atau dijustifikasi)
-  [ ] Error bar/CI ditampilkan
-  [ ] Semua data disertakan (tidak cherry-picked)
-  [ ] Tidak menggunakan 3D tanpa alasan
+  [X] Y-axis mulai dari 0 (atau dijustifikasi)
+  [X] Error bar/CI ditampilkan
+  [X] Semua data disertakan (tidak cherry-picked)
+  [X] Tidak menggunakan 3D tanpa alasan
 ```
 
 ---
@@ -92,17 +93,17 @@ Bias Check:
 
 Buat tabel hasil eksperimen Anda (boleh dengan data simulasi jika belum punya data riil).
 
-| Skenario | Metrik 1 (mean ± std) | Metrik 2 (mean ± std) | n |
+| Skenario | Metrik 1 Round Trip Time / RTT (mean ± std) | Metrik 2 Packet Loss Rate (%) (mean ± std) | n |
 |----------|----------------------|----------------------|---|
-| *Contoh: BERT-base* | *88.4 ± 1.2%* | *45.2 ± 3.1 min* | *10* |
-| | | | |
+| Baseline (Plaintext) | 15.24 ± 0.42ms | 0%(0/100) | 100 |
+| Intervensi (AES-128) | 18.42 ± 1.15ms | 2%(2/100) | 98 |
 | | | | |
 
 **Checklist tabel:**
-- [ ] Self-contained (judul jelas, satuan ada, N tercantum)
-- [ ] Mean ± std (bukan single number)
-- [ ] Diurutkan berdasarkan metrik utama
-- [ ] Format konsisten di semua baris
+- [X] Self-contained (judul jelas, satuan ada, N tercantum)
+- [X] Mean ± std (bukan single number)
+- [X] Diurutkan berdasarkan metrik utama
+- [X] Format konsisten di semua baris
 
 ---
 
@@ -112,9 +113,8 @@ Rencanakan 2-3 grafik untuk menyajikan data dari Latihan 1. Setiap grafik = satu
 
 | # | Jenis Grafik | Pesan | Data yang Digunakan |
 |---|-------------|-------|---------------------|
-| 1 | *Contoh: Bar chart + error bar* | *Perbandingan accuracy antar 3 model* | *Mean accuracy ± std* |
-| 2 | *Box plot* | *Distribusi F1 per model* | *Semua run F1* |
-| 3 | *Scatter plot* | *Trade-off accuracy vs training time* | *Mean accuracy vs mean time* |
+| 1 | Bar chart + error bar | Menunjukkan peningkatan rata-rata delay yang konvergen dan stabil, membuktikan hipotesis bahwa overhead enkripsi ringan bagi CPU 80MHz (<5ms) | Nilai Mean RTT dan Standard Deviation dari kedua kelompok. |
+| 2 | Box plot | Menunjukkan variabilitas data nirkabel asli, rentang interkuartil, serta memperlihatkan posisi pencanduan titik data ekstrem (contextual anomaly) 45.12 ms pada pengujian AES-128. | Seluruh sebaran baris data RTT (100 data Baseline, 98 data Intervensi). |
 
 ---
 
@@ -122,18 +122,18 @@ Rencanakan 2-3 grafik untuk menyajikan data dari Latihan 1. Setiap grafik = satu
 
 Evaluasi visualisasi berikut untuk bias (skenario dari contoh):
 
-**Skenario:** Metode A = 91.2%, Metode B = 90.8%. Bar chart dengan Y-axis mulai dari 90%.
+**Skenario:** Metode A (Plaintext) = 15.24 ms, Metode B = (AES-128) = 18.42 ms. Bar chart dengan Y-axis mulai dari 14 ms hingga 19 ms.
 
 | Pertanyaan | Jawaban |
 |-----------|---------|
-| Apakah Y-axis menyesatkan? | *Contoh: Ya — A terlihat 2× B padahal beda 0.4%* |
-| Apakah error bar ditampilkan? | |
-| Apakah semua kondisi ditampilkan? | |
-| Apa solusinya? | |
+| Apakah Y-axis menyesatkan? | Ya. Pemotongan sumbu Y dari 14 ms akan secara visual mendistorsi grafik, membuat balok AES-128 (18.42 ms) terlihat seolah-olah 3 hingga 4 kali lipat lebih lambat dan berat daripada Plaintext, padahal selisih riilnya hanya 3.18 ms. |
+| Apakah error bar ditampilkan? | Tidak, pada visualisasi yang bias, error bar sering sengaja dihilangkan untuk menyembunyikan fakta bahwa variansi kedua data sebenarnya saling beririsan (overlapping). |
+| Apakah semua kondisi ditampilkan? | Ya, namun distorsinya terletak pada aspek skala sumbu vertikal (truncated axis). |
+| Apa solusinya? | Sumbu Y wajib dipetakan secara jujur mulai dari angka 0 ms. Dengan demikian, pembaca dapat melihat secara proporsional bahwa penambahan enkripsi AES-128 sebenarnya sangat aman dan tidak merusak batas responsivitas waktu nyata (real-time).|
 
 **Evaluasi grafik Anda sendiri dari Latihan 2:**
-- [ ] Semua bias check lulus
-- [ ] Ada yang perlu diperbaiki: ____
+- [X] Semua bias check lulus
+- [X] Ada yang perlu diperbaiki: Tidak ada, sumbu Y dipastikan dimulai dari 0 ms dan error bar standard deviasi wajib dilekatkan pada puncak setiap balok diagram.
 
 ---
 
@@ -141,5 +141,7 @@ Evaluasi visualisasi berikut untuk bias (skenario dari contoh):
 
 > Mengapa tabel dan grafik keduanya diperlukan — tidak cukup salah satu saja? Pernahkah Anda membuat grafik yang (tanpa sengaja) menyesatkan?
 
-> ___________________________________________________
-> ___________________________________________________
+> Urgensi kombinasi Tabel dan Grafik:
+Tabel dan grafik tidak bisa dipisahkan karena melayani fungsi kognitif yang berbeda dalam laporan ilmiah. Tabel menyediakan aspek presisi numerik yang absolut, memungkinan peneliti lain menyalin angka rata-rata desimal secara tepat untuk keperluan komparasi di masa depan. Di sisi lain, grafik memberikan kecepatan penangkapan pola makro. Melalui grafik, pembaca secara instan dapat memahami struktur distribusi data, melihat ketimpangan deviasi standar, dan mendeteksi anomali tanpa harus membaca baris angka satu per satu.
+> Pengalaman visualisasi menyesatkan:
+Dalam pengerjaan tugas infografis dahulu, saya pernah secara tidak sengaja membuat grafik batang dengan sumbu Y yang tidak dimulai dari angka nol agar perbedaan performa antar-sistem terlihat mencolok di presentasi. Saya menyadari bahwa tindakan tersebut keliru dalam ranah riset siber akademis, karena mengubah visualisasi data demi mengejar efek dramatis melanggar prinsip kejujuran data (data integrity) dan menghasilkan kesimpulan bias yang dapat menyesatkan penilai atau pembaca.
