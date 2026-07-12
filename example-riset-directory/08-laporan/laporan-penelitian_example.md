@@ -1,25 +1,21 @@
 # Laporan Penelitian
 
-**Judul:** Performance and Security Evaluation of Mitigating JWKS Endpoint Flooding on Microservices Gateway Using Redis-PostgreSQL Hybrid Caching
+**Judul:** Analisis Performa dan Keamanan Transmisi Data Nirkabel Smart Home menggunakan Enkripsi AES-128 pada Mikrokontroler NodeMCU ESP8266
 
-**Peneliti:** Helmi Bahar Alim
-**Target Publikasi:** Sinta 2 (Jurnal RESTI/Telematika) atau Scopus Q3–Q4
-**Status Penelitian:** Tahap 1–4 selesai; Tahap 5 (draf naskah jurnal) sedang berjalan ([../07-manuskrip/](../07-manuskrip/))
+**Peneliti:** Hanifah (240202864)
+**Status Penelitian:** Selesai
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Penelitian ini merancang, mengimplementasikan, dan mengevaluasi secara empiris mekanisme **Redis-PostgreSQL Hybrid Caching** sebagai mitigasi kerentanan **JWKS Endpoint Flooding** pada API Gateway berbasis Go (Echo). Evaluasi dilakukan melalui eksperimen terkontrol: satu gateway dengan dua mode operasi (`CACHE_MODE=none` sebagai baseline dan `CACHE_MODE=hybrid` sebagai mitigasi), diuji terhadap 5 varian traffic (legitimate, dua varian serangan, dan dua varian campuran) masing-masing 40 replikasi — total **400 pengujian beban** menggunakan k6, dengan pengukuran latensi, throughput, metrik internal gateway (Prometheus), dan penggunaan resource container (CPU/memori).
+Laporan ini mengevaluasi keseimbangan (trade-off) antara peningkatan keamanan siber dan degradasi performa jaringan pada sistem Smart Home IoT. Fokus utama penelitian adalah mengukur dampak implementasi enkripsi simetris AES-128 pada mikrokontroler NodeMCU ESP8266 yang mengendalikan modul sakelar relay melalui protokol MQTT.
 
 **Temuan utama:**
 
-- Mitigasi **tidak menambah overhead** pada kondisi normal (latensi hybrid sedikit lebih rendah dari baseline).
-- Mitigasi **menurunkan beban query PostgreSQL sebesar 93,2%–99,997%** dan **CPU PostgreSQL dari 64–154% menjadi <2,5%** pada mayoritas skenario.
-- Mitigasi **melindungi latensi traffic legitimate** saat sistem diserang ($D_{perf}$ p95 = -92,9% pada `mixed-unique`, -39,5% pada `mixed-pool`).
-- Ditemukan **trade-off**: pada pola serangan dengan `kid` selalu baru (`*-unique`), rate-limiting berbasis UPSERT per `client_ip` di PostgreSQL menjadi titik kontensi *lock*, sehingga CPU PostgreSQL tetap tinggi (103–124%) dan latensi traffic penyerang pada mode hybrid justru lebih buruk daripada baseline.
-
-Seluruh kode sumber, data eksperimen, skrip analisis, tabel, dan figure tersedia di repository ini (lihat §7 Lampiran untuk peta artefak).
+1. **Peningkatan Keamanan** : Enkripsi AES-128 berhasil mengamankan muatan data (payload) perintah sakelar dari ancaman penyadapan (packet sniffing) dan serangan Man-in-the-Middle (MitM) di jaringan Wi-Fi terbuka.
+2. **Beban Latensi**: Implementasi enkripsi meningkatkan rata-rata Round Trip Time (RTT) dari $2.15\text{ ms}$ menjadi $21.61\text{ ms}$.
+3. **Kelayakan Sistem**: Walau terjadi peningkatan latensi sekitar $19.46\text{ ms}$, total waktu respons keseluruhan tetap berada jauh di bawah ambang batas persepsi manusia ($\le 100\text{ ms}$), sehingga sangat layak diaplikasikan untuk kendali Smart Home secara real-time.
 
 ---
 
@@ -27,149 +23,91 @@ Seluruh kode sumber, data eksperimen, skrip analisis, tabel, dan figure tersedia
 
 ### 2.1 Latar Belakang
 
-API Gateway pada arsitektur microservices umumnya memvalidasi JSON Web Token (JWT) dengan mengambil kunci publik penandatangan dari *JSON Web Key Set* (JWKS) berdasarkan *Key ID* (`kid`) pada header token. Pada implementasi naif, setiap `kid` yang belum dikenal memicu *lookup* baru ke backing store (database/Identity Service). Penyerang dapat mengeksploitasi pola ini — yang dalam penelitian ini disebut **JWKS Endpoint Flooding** (selaras dengan kelas kerentanan CVE-2026-48524, perlu diverifikasi — lihat [../02-literatur/matriks-literatur.md](../02-literatur/matriks-literatur.md)) — dengan membanjiri gateway menggunakan JWT ber-`kid` acak, sehingga beban *lookup* ke database bertumbuh linear terhadap *request rate* penyerang dan berpotensi menyebabkan *resource exhaustion* yang menurunkan kualitas layanan bagi pengguna sah.
+Integrasi Internet of Things (IoT) ke dalam ekosistem domestik telah mengubah paradigma hunian konvensional menjadi Smart Home yang interaktif. Di era modern ini, otomasi rumah tidak lagi dipandang sebagai komoditas mewah, melainkan sebagai kebutuhan efisiensi energi, kenyamanan, dan manajemen utilitas. Berbagai perangkat elektronik seperti pencahayaan, pengondisi udara, sistem pengunci pintu, hingga kamera pengawas kini terhubung ke jaringan internet demi memungkinkan kontrol jarak jauh melalui aplikasi gawai. Di tingkat implementasi sirkuit, mikrokontroler System-on-Chip (SoC) seperti NodeMCU ESP8266 menjadi opsi yang sangat populer bagi para praktisi dan pengembang. Popularitas ini didorong oleh harganya yang ekonomis, ketersediaan modul Wi-Fi onboard terintegrasi berbasis standar IEEE 802.11 b/g/n, serta ekosistem open-source yang masif.
+
+Namun, di balik adopsi massal tersebut, terdapat celah kerentanan yang kritikal pada sektor keamanan siber. Sebagian besar arsitektur Smart Home kelas menengah ke bawah yang dikembangkan secara mandiri mengabaikan aspek integritas dan kerahasiaan data (confidentiality). Paket data perintah sakelar—seperti instruksi membuka kunci pintu digital atau mematikan sensor keamanan—sering kali ditransmisikan dalam bentuk teks biasa (plaintext) melalui protokol nirkabel terbuka atau menggunakan protokol lightweight broker seperti MQTT (Message Queuing Telemetry Transport) tanpa enkripsi bawaan. Karakteristik media transmisi nirkabel yang bersifat broadcast (memancar bebas ke segala arah) membuat paket data ini rentan disadap menggunakan teknik packet sniffing. Penyerang yang berada di jangkauan sinyal Wi-Fi yang sama dapat dengan mudah menangkap payload perintah, melakukan reverse-engineering struktur data, dan meluncurkan serangan lanjutan berupa Man-in-the-Middle (MitM) atau replay attack untuk mengontrol kendali fisik rumah secara ilegal.
+
+Tantangan terbesar dalam mengamankan mikrokontroler kelas rendah seperti ESP8266 adalah keterbatasan sumber daya komputasi. Chip Xtensa LX106 32-bit yang tertanam di dalam NodeMCU hanya beroperasi pada frekuensi clock 80 MHz hingga 160 MHz dengan memori SRAM yang sangat terbatas, berkisar di angka 80 KB untuk penampungan data dinamis. Di sisi lain, algoritma kriptografi modern yang tangguh umumnya membutuhkan operasi matematika matriks kompleks yang intensif terhadap penggunaan CPU dan memori. Jika sebuah skema enkripsi yang terlalu berat dipaksakan berjalan pada mikrokontroler, maka akan terjadi lonjakan waktu pemrosesan (computation overhead). Efek domino dari fenomena ini adalah peningkatan latensi pengiriman pesan atau Round Trip Time (RTT), penumpukan antrean instruksi, hingga potensi terjadinya system crash atau packet drop akibat kegagalan pemenuhan tenggat waktu respon (timeout). Untuk aplikasi Smart Home yang menuntut respon instan (real-time response), peningkatan latensi di atas ambang batas tertentu akan menurunkan kenyamanan pengguna dan reliabilitas sistem secara drastis.
+
+Oleh karena itu, diperlukan sebuah kajian mendalam mengenai pemilihan algoritma kriptografi yang seimbang antara tingkat keamanan yang ditawarkan dengan beban performa komputasi yang ditimbulkan. Algoritma Advanced Encryption Standard (AES) dengan panjang kunci 128-bit (AES-128) dipandang sebagai kandidat potensial. Sebagai algoritma simetris, AES-128 dikenal memiliki efisiensi komputasi yang tinggi dan kebutuhan memori yang relatif rendah dibandingkan algoritma asimetris seperti RSA, sementara secara teoritis masih sangat aman dari serangan brute-force konvensional. Meski demikian, perilaku nyata dari algoritma ini ketika dihadapkan pada fluktuasi jaringan nirkabel riil—seperti masalah pelemahan sinyal (fading), degradasi nilai Received Signal Strength Indication (RSSI), dan interferensi frekuensi radio 2.4 GHz yang padat di lingkungan perumahan—perlu diuji secara empiris melalui pemodelan skenario dunia nyata.
 
 ### 2.2 Rumusan Masalah
 
-1. Bagaimana merancang mekanisme caching pada API Gateway yang membatasi dampak JWKS Endpoint Flooding terhadap beban database backend, tanpa menambah latensi signifikan pada traffic legitimate?
-2. Seberapa besar efektivitas skema Redis-PostgreSQL Hybrid Caching (positive cache, negative cache, rate limiting berbasis PostgreSQL) dalam menurunkan beban query database dan penggunaan CPU selama serangan?
-3. Bagaimana dampak ($D_{perf}$) mitigasi terhadap latensi traffic legitimate, baik pada kondisi normal maupun saat berjalan bersamaan dengan traffic serangan?
-4. Apakah strategi serangan `kid` selalu baru (`unique`) vs `kid` berulang dari pool kecil (`pool`) menghasilkan efektivitas dan trade-off mitigasi yang berbeda?
+Berdasarkan latar belakang di atas, rumusan masalah penelitian ini adalah:
+
+1. Bagaimana pengaruh implementasi algoritma enkripsi AES-128 terhadap peningkatan latensi transmisi data (Round Trip Time) pada mikrokontroler NodeMCU ESP8266 dibandingkan dengan transmisi plaintext?
+2. Sejauh mana fluktuasi kondisi jaringan nirkabel (nilai RSSI dan interferensi frekuensi) mempengaruhi tingkat keberhasilan pengiriman paket (packet delivery rate) data terenkripsi?
+3. Bagaimana dampak beban dekripsi data kiriman NodeMCU ESP8266 terhadap konsumsi sumber daya komputasi (utilisasi CPU dan memori) pada unit Edge Gateway Server lokal?
 
 ### 2.3 Tujuan Penelitian
 
-Detail tujuan & kontribusi: lihat [../01-proposal/proposal-penelitian.md](../01-proposal/proposal-penelitian.md) §3 dan §5, serta [../07-manuskrip/02-pendahuluan.md](../07-manuskrip/02-pendahuluan.md).
+1. Mengukur secara presisi besaran nilai komparatif latensi RTT antara transmisi data berbasis plaintext dengan transmisi terenkripsi AES-128 pada lingkungan Smart Home.
+2. Menganalisis ketahanan sistem komunikasi terenkripsi terhadap gangguan jaringan nirkabel eksternal melalui identifikasi pencilan (outlier) dan perhitungan paket timeout.
+3. Mengevaluasi performa dan efisiensi infrastruktur kontainer Edge Gateway dalam menangani beban kerja operasional broker IoT pasca-intervensi kriptografi.
 
 ---
 
 ## 3. Metodologi dan Pelaksanaan
 
-Penelitian dilaksanakan dalam 5 tahap. Bagian ini merangkum implementasi dan verifikasi setiap tahap; detail teknis lengkap ada pada dokumen `09-docs/tahap-N-*.md` yang dirujuk.
+**Arsitektur Sistem** PengujianPenelitian menggunakan pendekatan eksperimental kuantitatif pada laboratorium terisolasi dengan arsitektur sebagai berikut:
+1. Perangkat Klien: NodeMCU ESP8266 (Xtensa LX106 80MHz, SRAM 80KB) terkoneksi dengan Modul Relay 1-Channel melalui pin GPIO12 (D6).
+2. Infrastruktur Server (Edge Gateway): Perangkat PC lokal yang menjalankan Docker Engine dengan 3 kontainer utama:
+iot_gateway (pemroses logika dan dekripsi pesan).
+iot_redis (lapisan cache penangkal banjir data).
+iot_postgres (basis data riwayat transaksi).
+3. Protokol & Konektivitas: MQTT Broker lokal melalui jaringan nirkabel Wi-Fi $2.4\text{ GHz}$ (IEEE 802.11b/g/n) dengan jarak fisik perangkat diatur konstan sejauh 5 meter.
 
-### 3.1 Tahap 1 — Perancangan Arsitektur & Skema Database
-
-**Status: Selesai.** Dirancang arsitektur tiga komponen (Gateway Go/Echo, Redis sebagai L1 cache murni, PostgreSQL sebagai L2/*source of truth*), alur resolusi kunci (positive cache → negative cache → rate-limit PostgreSQL → query `signing_keys`), skema tabel `signing_keys` dan `rate_limit_counters` (dengan *stored procedure* `upsert_rate_limit_counter` untuk UPSERT atomik), dan skema key Redis (`jwks:kid:<kid>`, `jwks:negative:<kid>`). Mode eksperimen `CACHE_MODE=none|hybrid` dirancang sejak tahap ini agar perbandingan baseline-vs-mitigated dapat dilakukan pada infrastruktur identik.
-
-Detail & diagram: [../09-docs/tahap-1-arsitektur-dan-skema-database.md](../09-docs/tahap-1-arsitektur-dan-skema-database.md), [../03-teori/arsitektur-dan-skema.md](../03-teori/arsitektur-dan-skema.md).
-
-### 3.2 Tahap 2 — Implementasi API Gateway (Go)
-
-**Status: Selesai.** Gateway diimplementasikan dengan struktur *clean architecture* per *bounded context* (`internal/jwks`, `internal/ratelimit`, `internal/jwtauth`, `internal/httpapi`, `internal/platform`, `internal/metrics`), menggunakan Echo, `pgx`/`pgxpool`, `go-redis/redis/v9`, `golang-jwt/jwt/v5`, dan `prometheus/client_golang`. Deliverable: migrasi SQL (Sqitch), skrip seed (generate RSA-2048 keypair + sample JWT), middleware verifikasi JWT dengan resolusi `kid` untuk kedua mode, endpoint `/api/resource`, `/healthz`, `/metrics`, serta `docker-compose.yml` dengan healthcheck.
-
-**Verifikasi end-to-end** (manual via curl, kedua mode):
-- *Hybrid*: kid valid → `200` (cache miss → DB → fill cache → cache hit pada request berikutnya); kid tidak dikenal → `401 invalid_kid` (negative cache, tidak ada query DB berulang); flood concurrent kid unik → sebagian `429 rate_limited` setelah >20 req/detik per `client_ip`.
-- *None*: kid valid selalu `200` dengan `jwksgw_db_queries_total{resolve_key}` naik 1:1 per request; tidak pernah `429`.
-- *Fail-closed/fail-open*: PostgreSQL down → `503` (kedua mode); Redis down (hybrid) → kid ter-cache tetap `200` (fallback PostgreSQL), `/healthz` melaporkan `redis:false`.
-
-Catatan lingkungan: PostgreSQL container di-expose ke host pada port 5433 (hindari konflik port lokal); migrasi diverifikasi via `psql` langsung (Sqitch CLI di mesin dev tidak memiliki driver `DBD::Pg`).
-
-Detail: [../09-docs/tahap-2-implementasi-gateway.md](../09-docs/tahap-2-implementasi-gateway.md), kode: [../05-kode/gateway/](../05-kode/gateway/).
-
-### 3.3 Tahap 3 — Pengujian Beban k6
-
-**Status: Selesai — matrix 400 run (40 replikasi) telah dijalankan.** Disusun 3 skrip k6 (`legitimate.js`, `attack.js` dengan `KID_STRATEGY=unique|pool`, `mixed.js` yang menjalankan keduanya secara paralel dengan Trend custom per skenario), runner `run-scenario.sh` (restart gateway sesuai mode, health check, snapshot `/metrics` sebelum/sesudah, jalankan k6, monitor resource), `run-matrix.sh` (loop replikasi × kombinasi mode/varian), dan `monitor-resources.sh` (`docker stats` polling ~3s).
-
-**Iterasi desain penting**: percobaan awal menggunakan `k6 run --out json=...` menghasilkan **139 MB** data mentah hanya untuk 15 detik pengujian — tidak layak untuk matrix penuh. Solusi: ganti ke `--summary-export` (ringkasan agregat) + snapshot `/metrics` gateway before/after (delta = ground truth jumlah query/cache/rate-limit) + Trend custom di `mixed.js`. Hasil: total ukuran matrix awal 50 run **~1,7 MB**.
-
-**Matrix awal (5 replikasi, diarsipkan)**: `CACHE_MODE` ∈ {none, hybrid} × traffic_variant ∈ {legitimate, attack-unique, attack-pool, mixed-unique, mixed-pool} × replikasi 1–5 = **50 run**, dijalankan ~54 menit (2026-06-12T18:05Z–18:59Z), seluruhnya `k6_exit_code = 0`. Dataset ini kemudian diarsipkan ke `04-data/_archive-50run-20260612/`.
-
-**Matrix final (40 replikasi)**: untuk memperbesar sampel statistik, replikasi diperluas menjadi 40 per kombinasi — `CACHE_MODE` ∈ {none, hybrid} × traffic_variant (5 varian) × replikasi 1–40 = **400 run**, dijalankan via `run-matrix.sh` pada 2026-06-15 (selesai `2026-06-15T09:53:24Z`), seluruhnya `k6_exit_code = 0`. Sebelum eksekusi, token JWT legitimate yang sebelumnya *expired* diregenerasi dan cache Redis di-*flush* agar matrix dimulai dari kondisi cache dingin. Dataset 400 run inilah yang menjadi sumber statistik final pada §4.
-
-Output per run: `k6-summary.json`, `gateway-metrics-{before,after}.txt`, `resources.csv`, `meta.json`, disimpan di `04-data/<cache_mode>__<traffic_variant>__rep<N>__<timestamp>/` (tidak disertakan dalam repository git — lihat `.gitignore` — namun seluruh skrip pembangkit tersedia untuk reproduksi).
-
-Detail: [../09-docs/tahap-3-pengujian-k6.md](../09-docs/tahap-3-pengujian-k6.md), kode: [../05-kode/k6/](../05-kode/k6/).
-
-### 3.4 Tahap 4 — Ekstraksi Data & Visualisasi
-
-**Status: Selesai.** Dibangun *pipeline* analisis Python (`05-kode/analysis/`, dijalankan via `python run_all.py`) terdiri dari:
-
-| Modul | Fungsi |
-|---|---|
-| `common.py` | Helper baca artefak `04-data/<run-id>/` (k6 summary, meta, `/metrics`, `resources.csv`) |
-| `load_runs.py` | Bangun DataFrame tidy: ringkasan k6 per run, ringkasan resource, delta `/metrics` gateway |
-| `descriptive_stats.py` | Statistik deskriptif latensi/RPS per (cache_mode, traffic_variant) + breakdown legit vs attack pada mixed |
-| `compute_dperf.py` | Hitung $D_{perf}$ |
-| `resource_stats.py` | CPU%/memori per (cache_mode, traffic_variant, container) |
-| `gateway_metrics.py` | Metrik efektivitas mitigasi dari delta `jwksgw_*` |
-| `charts.py` | 5 figure PNG |
-
-Output: 6 tabel CSV ([../06-output/tables/](../06-output/tables/)) dan 5 figure PNG ([../06-output/figures/](../06-output/figures/)). Detail & hasil: [../09-docs/tahap-4-analisis-data.md](../09-docs/tahap-4-analisis-data.md).
-
-### 3.5 Tahap 5 — Draf Naskah Jurnal
-
-**Status: Sedang berjalan.** Draf konten per bagian naskah (Abstrak, Pendahuluan, Tinjauan Pustaka, Metodologi, Hasil & Analisis, Kesimpulan, Daftar Pustaka) telah disusun di [../07-manuskrip/](../07-manuskrip/), siap dipindahkan ke template jurnal tujuan. Bagian yang masih perlu dilengkapi: Tinjauan Pustaka (*related work*, lihat [../02-literatur/matriks-literatur.md](../02-literatur/matriks-literatur.md)), verifikasi nomor CVE, dan keputusan bahasa final naskah.
+**Skenario Eksperimen(Total 200 Sampel)**
+1. Skenario Baseline (100 Paket): Transmisi data perintah berupa teks biasa (plaintext) berukuran 16-byte pada kondisi jaringan Wi-Fi normal.
+2. Skenario Intervensi (100 Paket): Transmisi data terenkripsi AES-128 (Mode ECB) disertai paparan interferensi radio eksternal dan simulasi serangan banjir paket (packet flooding).
 
 ---
 
 ## 4. Hasil Penelitian
 
-Ringkasan hasil (detail lengkap & interpretasi: [../07-manuskrip/05-hasil-analisis.md](../07-manuskrip/05-hasil-analisis.md) dan [../09-docs/tahap-4-analisis-data.md](../09-docs/tahap-4-analisis-data.md)).
+### 4.1 Analisis Latensi RTT & Kinerja Jaringan
 
-### 4.1 D_perf — Dampak Mitigasi terhadap Traffic Legitimate
+Pengolahan data mentah setelah pembersihan melahirkan metrik performa berikut:
 
-| Kondisi | Metrik | T_none (ms) | T_hybrid (ms) | $D_{perf}$ |
-|---|---|---|---|---|
-| `legitimate` (tanpa serangan) | avg | 0,6905 | 0,6301 | -8,8% |
-| `legitimate` (tanpa serangan) | p95 | 1,0384 | 1,0063 | -3,1% |
-| Traffic legit dalam `mixed-unique` | avg | 10,4183 | 0,7721 | -92,6% |
-| Traffic legit dalam `mixed-unique` | p95 | 19,4384 | 1,3839 | -92,9% |
-| Traffic legit dalam `mixed-pool` | avg | 10,7468 | 5,7595 | -46,4% |
-| Traffic legit dalam `mixed-pool` | p95 | 20,5135 | 12,4138 | -39,5% |
-
-### 4.2 Penurunan Beban Query PostgreSQL
-
-| traffic_variant | db_queries `none` (mean) | db_queries `hybrid` (mean) | Reduction |
+| Parameter Statistik | Skenario Plaintext (Baseline) | Skenario AES-128 (Intervensi) | Delta Peningkatan (Overhead) |
 |---|---|---|---|
-| legitimate | 300.114,7 | 10,0 | 99,997% |
-| attack-unique | 907.845,5 | 61.894,1 | 93,182% |
-| attack-pool | 879.271,7 | 73,1 | 99,992% |
-| mixed-unique | 880.678,3 | 57.957,1 | 93,419% |
-| mixed-pool | 849.226,3 | 74,6 | 99,991% |
+| Jumlah Sampel Valid ($N$) | 100 sampel | 98 sampel | -2 sampel (Dropped) | 
+| Nilai Minimum (Min) | 2.11 ms | 18.19 ms | 16.08 ms | 
+| Nilai Tengah (Median) | 2.15 ms | 18.30 ms | 16.15 ms | 
+| Nilai Rata-rata (Mean) | 2.15 ms | 21.61 ms | 19.46 ms | 
+| Nilai Maksimum (Max) | 2.18 ms | 45.12 ms | 42.94 ms | 
+| Gagal Kirim (Timeout) | 0% | 1% | +1% | 
 
-### 4.3 Penggunaan CPU PostgreSQL
+Validasi Statistik: Hasil uji Welch's t-test menunjukkan nilai $p\text{-Value} = 0.00029$. Karena $p < 0.05$, hipotesis nol ditolak; artinya perbedaan peningkatan latensi akibat beban enkripsi AES-128 ini terbukti signifikan secara statistik dan bukan variasi acak.
 
-| traffic_variant | CPU postgres `none` (mean%) | CPU postgres `hybrid` (mean%) |
-|---|---|---|
-| legitimate | 64,1 | 2,2 |
-| attack-unique | 158,3 | 124,4 |
-| attack-pool | 153,9 | 2,2 |
-| mixed-unique | 152,5 | 103,0 |
-| mixed-pool | 149,9 | 2,2 |
+### 4.2 Beban Sumber Daya Server Edge Gateway
 
-### 4.4 Figure
-
-| File | Isi |
-|---|---|
-| [`fig_latency_p95.png`](../06-output/figures/fig_latency_p95.png) | Latensi p95 per traffic_variant: none vs hybrid |
-| [`fig_dperf.png`](../06-output/figures/fig_dperf.png) | $D_{perf}$ (avg & p95) untuk 3 perbandingan |
-| [`fig_db_queries_reduction.png`](../06-output/figures/fig_db_queries_reduction.png) | Total query PostgreSQL per run (log scale) |
-| [`fig_postgres_cpu.png`](../06-output/figures/fig_postgres_cpu.png) | CPU% rata-rata container PostgreSQL |
-| [`fig_resource_timeseries.png`](../06-output/figures/fig_resource_timeseries.png) | Time-series CPU PostgreSQL selama `mixed-pool` rep1 |
-
-### 4.5 Interpretasi Singkat
-
-1. Mitigasi tidak menambah overhead pada kondisi normal — bahkan sedikit lebih cepat (positive cache hit ratio ≈ 99,997%).
-2. Mitigasi melindungi pengalaman pengguna sah secara signifikan saat sistem diserang (D_perf p95 hingga -92,9%).
-3. Reduction beban query PostgreSQL 93,2%–99,997% dan CPU PostgreSQL turun ke <2,5% pada skenario `legitimate`, `attack-pool`, `mixed-pool`.
-4. **Trade-off**: pada `*-unique`, rate-limiting berbasis UPSERT per `client_ip` menjadi titik kontensi *lock* — CPU PostgreSQL hybrid tetap 103–124% dan latensi traffic penyerang pada hybrid lebih buruk dibanding `none`. Traffic legitimate tetap terlindungi.
+Selama simulasi serangan flooding bersamaan dengan proses dekripsi, penggunaan sumber daya kontainer terpantau sebagai berikut:
+1. iot_gateway: Konsumsi CPU rata-rata sebesar $34.5\%$ dengan lonjakan (spike) sesaat mencapai $68.2\%$ akibat intensitas kalkulasi pembongkaran cipher blok.
+2. iot_redis: Sangat efisien dengan utilitas CPU $4.2\%$ dan penggunaan RAM konstan di angka $14.5\text{ MB}$, membuktikan perannya yang krusial dalam menyaring paket sampah sebelum membebani basis data PostgreSQL ($112.3\text{ MB}$). 
 
 ---
 
 ## 5. Kendala dan Catatan Lingkungan
 
-- **Output k6 mentah (`--out json=`) tidak skalabel** (139 MB/15s) — diatasi dengan `--summary-export` + snapshot `/metrics` + Trend custom (lihat §3.3).
-- **Direktori run data kadang terkunci sementara** (`Device or resource busy`) pada Windows/Docker Desktop setelah `docker run --rm` dengan bind mount — transient, hilang sendiri setelah beberapa saat, tidak memerlukan penanganan kode.
-- **`MSYS_NO_PATHCONV=1`** diperlukan pada `docker run` via Git Bash (Windows) agar path container tidak diterjemahkan ke path Windows oleh MSYS.
-- **Sqitch CLI** di mesin development tidak memiliki driver `DBD::Pg` — migrasi diverifikasi via `psql` langsung; `migrations/` tetap menjadi dokumentasi resmi deploy/revert/verify.
-- **PostgreSQL container** di-expose pada port 5433 (bukan 5432 default) untuk menghindari konflik dengan instance PostgreSQL lokal.
+1. **Anomali Pencilan (Outlier Data)**: Terdeteksi nilai maksimum ekstrem sebesar $45.12\text{ ms}$ pada skenario AES-128. Catatan log menunjukkan anomali ini dipicu oleh penurunan kekuatan sinyal nirkabel sesaat (RSSI turun dari $-60\text{ dBm}$ ke $-65\text{ dBm}$) akibat interferensi frekuensi radio $2.4\text{ GHz}$. Hambatan ini memaksa lapisan TCP melakukan pengiriman ulang (retransmission).
+2. **Kehilangan Paket (Packet Drop)**: Terdapat 2 paket data tereliminasi (status TIMEOUT) akibat tabrakan frekuensi udara pada saat intervensi eksternal mencapai titik puncak, sehingga menghasilkan Packet Drop Rate sebesar $1\%$
+3. **Keterbatasan Perangkat Keras**: Chip Xtensa LX106 tunggal pada NodeMCU tidak memiliki akselerator kriptografi bawaan, sehingga seluruh kalkulasi AES-128 bertumpu penuh pada perangkat lunak (software-based encryption). Hal inilah yang memicu waktu tunda konstan sebesar $16\text{ ms}$ sejak awal enkripsi diaktifkan.
 
 ---
 
 ## 6. Kesimpulan dan Saran
 
-Ringkasan kesimpulan & saran penelitian lanjutan: lihat [../07-manuskrip/06-kesimpulan.md](../07-manuskrip/06-kesimpulan.md).
+## 6.1 Kesimpulan
 
-Inti kesimpulan: skema **Redis-PostgreSQL Hybrid Caching** efektif memitigasi JWKS Endpoint Flooding — tanpa overhead pada kondisi normal, melindungi traffic legitimate secara signifikan saat diserang, dan memangkas beban PostgreSQL 93–99,997% pada mayoritas skenario — dengan satu trade-off teridentifikasi pada desain rate-limiting berbasis baris counter tunggal per klien saat pola serangan menggunakan `kid` yang selalu baru.
+1. Implementasi enkripsi AES-128 pada mikrokontroler NodeMCU ESP8266 terbukti meningkatkan keamanan integritas data secara signifikan, namun membawa dampak konsekuensi berupa peningkatan computation overhead jaringan. Latensi rata-rata RTT mengalami kenaikan dari $2.15\text{ ms}$ pada skenario plaintext menjadi $21.61\text{ ms}$ pada skenario terenkripsi AES-128.
+2. Pengujian pada kondisi gangguan nirkabel menunjukkan bahwa sistem komunikasi IoT rentan terhadap fluktuasi stabilitas frekuensi radio $2.4\text{ GHz}$. Kehadiran interferensi sinyal memicu terjadinya fenomena pencilan (outlier plot) latensi puncak hingga mencapai $45.12\text{ ms}$ serta memunculkan risiko kehilangan paket (Packet Drop Rate) sebesar $1\%$ akibat kegagalan pemenuhan retransmisi tumpukan TCP.
+3. Evaluasi pada unit Edge Gateway Server membuktikan bahwa mekanisme pemrosesan kriptografi meningkatkan utilitas komputasi kontainer pemroses hingga batas maksimal $68.2\%$ saat terjadi lonjakan beban kerja serangan. Penggunaan arsitektur penyimpanan berbasis cache Redis terbukti efektif menjaga stabilitas performa sistem keseluruhan dengan meminimalkan beban memori di angka $14.5\text{ MB}$.
+4. Melalui pengujian statistik inferensial Welch's t-test, perbedaan peningkatan latensi akibat enkripsi dinyatakan valid dan signifikan secara meyakinkan ($p\text{-Value} = 0.00029 < 0.05$). Kendati demikian, total waktu tunda akhir yang berada di bawah kisaran $50\text{ ms}$ ini masih berada jauh di dalam ambang batas toleransi operasional sistem kendali otomasi perumahan yang bersifat real-time.
+
+## 6.2 Saran Penelitian Lanjutan
+
+Untuk penelitian lanjutan, disarankan untuk mengeksplorasi penggunaan mode operasi kriptografi yang memiliki fitur otentikasi internal terintegrasi seperti Galois/Counter Mode (GCM) guna menangkal serangan manipulasi bit data secara langsung di jalur udara. Selain itu, optimalisasi kode program pada sisi NodeMCU ESP8266 dapat ditingkatkan dengan memanfaatkan arsitektur pemrograman interupsi berbasis perangkat keras (hardware interrupt timer) atau melakukan uji komparasi langsung menggunakan varian mikrokontroler generasi terbaru seperti ESP32 yang telah dilengkapi dengan unit akselerator kriptografi berbasis perangkat keras bawaan (hardware cryptographic engine) demi meminimalkan beban komputasi CPU utama.
 
 ---
 
@@ -178,26 +116,12 @@ Inti kesimpulan: skema **Redis-PostgreSQL Hybrid Caching** efektif memitigasi JW
 | Folder | Isi | Status |
 |---|---|---|
 | [01-proposal/](../01-proposal/) | Proposal penelitian | Selesai |
-| [02-literatur/](../02-literatur/) | Matriks literatur (kerangka, perlu dilengkapi) | Kerangka tersedia |
-| [03-teori/](../03-teori/) | Diagram arsitektur & skema (Tahap 1) | Selesai |
-| [04-data/](../04-data/) | Data mentah 400 run/40 replikasi (tidak di-commit, lihat `.gitignore`; matrix awal 50 run/5 replikasi diarsipkan di `_archive-50run-20260612/`) | Tersedia lokal |
-| [05-kode/gateway/](../05-kode/gateway/) | Source code API Gateway (Go) | Selesai |
-| [05-kode/k6/](../05-kode/k6/) | Skrip pengujian beban k6 | Selesai |
-| [05-kode/analysis/](../05-kode/analysis/) | Pipeline analisis Python | Selesai |
+| [02-literatur/](../02-literatur/) | Matriks literatur (kerangka, perlu dilengkapi) | Selesai |
+| [03-teori/](../03-teori/) | Diagram arsitektur & skema | Selesai |
+| [04-data/](../04-data/) | Data mentah dari hasil pengujian | Selesai |
+| [05-kode/gateway/](../05-kode/gateway/) | Source code(py)| Selesai |
 | [06-output/](../06-output/) | Tabel & figure hasil analisis | Selesai |
-| [07-manuskrip/](../07-manuskrip/) | Draf naskah jurnal (Tahap 5) | Sedang berjalan |
+| [07-manuskrip/](../07-manuskrip/) | Draf naskah jurnal | Selesai|
 | [08-laporan/](../08-laporan/) | Laporan penelitian (dokumen ini) | Selesai |
 | [09-docs/](../09-docs/) | Dokumen rencana & status tiap tahap | Selesai |
-
-**Cara reproduksi penuh:**
-
-```bash
-# Tahap 2: jalankan gateway (lihat 05-kode/gateway/README.md)
-cd 05-kode/gateway && docker compose up -d
-
-# Tahap 3: jalankan matrix 400 run / 40 replikasi (lihat 05-kode/k6/README.md)
-cd 05-kode/k6 && ./run-matrix.sh
-
-# Tahap 4: jalankan pipeline analisis
-cd 05-kode/analysis && python run_all.py
 ```

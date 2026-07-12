@@ -1,0 +1,20 @@
+{
+  "scenario": "smarthome_crypto_evaluation",
+  "metrics": {
+    "iot_gateway": {
+      "avg_cpu_utilization_percent": 34.5,
+      "max_cpu_utilization_percent": 68.2,
+      "memory_usage_mb": 42.1
+    },
+    "iot_redis": {
+      "avg_cpu_utilization_percent": 4.2,
+      "max_cpu_utilization_percent": 12.8,
+      "memory_usage_mb": 14.5
+    },
+    "iot_postgres": {
+      "avg_cpu_utilization_percent": 8.1,
+      "max_cpu_utilization_percent": 22.4,
+      "memory_usage_mb": 112.3
+    }
+  }
+}

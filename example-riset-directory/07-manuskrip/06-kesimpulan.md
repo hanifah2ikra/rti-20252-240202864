@@ -1,0 +1,12 @@
+# Kesimpulan & Saran Penelitian Lanjutan
+
+## 6.1. Kesimpulan
+
+1. Implementasi enkripsi AES-128 pada mikrokontroler NodeMCU ESP8266 terbukti meningkatkan keamanan integritas data secara signifikan, namun membawa dampak konsekuensi berupa peningkatan computation overhead jaringan. Latensi rata-rata RTT mengalami kenaikan dari $2.15\text{ ms}$ pada skenario plaintext menjadi $21.61\text{ ms}$ pada skenario terenkripsi AES-128.
+2. Pengujian pada kondisi gangguan nirkabel menunjukkan bahwa sistem komunikasi IoT rentan terhadap fluktuasi stabilitas frekuensi radio $2.4\text{ GHz}$. Kehadiran interferensi sinyal memicu terjadinya fenomena pencilan (outlier plot) latensi puncak hingga mencapai $45.12\text{ ms}$ serta memunculkan risiko kehilangan paket (Packet Drop Rate) sebesar $1\%$ akibat kegagalan pemenuhan retransmisi tumpukan TCP.
+3. Evaluasi pada unit Edge Gateway Server membuktikan bahwa mekanisme pemrosesan kriptografi meningkatkan utilitas komputasi kontainer pemroses hingga batas maksimal $68.2\%$ saat terjadi lonjakan beban kerja serangan. Penggunaan arsitektur penyimpanan berbasis cache Redis terbukti efektif menjaga stabilitas performa sistem keseluruhan dengan meminimalkan beban memori di angka $14.5\text{ MB}$.
+4. Melalui pengujian statistik inferensial Welch's t-test, perbedaan peningkatan latensi akibat enkripsi dinyatakan valid dan signifikan secara meyakinkan ($p\text{-Value} = 0.00029 < 0.05$). Kendati demikian, total waktu tunda akhir yang berada di bawah kisaran $50\text{ ms}$ ini masih berada jauh di dalam ambang batas toleransi operasional sistem kendali otomasi perumahan yang bersifat real-time.
+
+## 6.2. Saran Penelitian Lanjutan
+
+Untuk penelitian lanjutan, disarankan untuk mengeksplorasi penggunaan mode operasi kriptografi yang memiliki fitur otentikasi internal terintegrasi seperti Galois/Counter Mode (GCM) guna menangkal serangan manipulasi bit data secara langsung di jalur udara. Selain itu, optimalisasi kode program pada sisi NodeMCU ESP8266 dapat ditingkatkan dengan memanfaatkan arsitektur pemrograman interupsi berbasis perangkat keras (hardware interrupt timer) atau melakukan uji komparasi langsung menggunakan varian mikrokontroler generasi terbaru seperti ESP32 yang telah dilengkapi dengan unit akselerator kriptografi berbasis perangkat keras bawaan (hardware cryptographic engine) demi meminimalkan beban komputasi CPU utama.

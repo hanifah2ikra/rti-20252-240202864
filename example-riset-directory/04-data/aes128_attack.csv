@@ -1,0 +1,11 @@
+timestamp,device_id,payload_size_bytes,rssi_dbm,rtt_latency_micros,status
+1783811801000,nodemcu_intervensi,16,-60,18420,SUCCESS
+1783811802000,nodemcu_intervensi,16,-65,45120,SUCCESS
+1783811803000,nodemcu_intervensi,16,-60,0,TIMEOUT
+1783811804000,nodemcu_intervensi,16,-60,0,TIMEOUT
+1783811805000,nodemcu_intervensi,16,-60,18250,SUCCESS
+1783811806000,nodemcu_intervensi,16,-61,18310,SUCCESS
+1783811807000,nodemcu_intervensi,16,-60,18190,SUCCESS
+1783811808000,nodemcu_intervensi,16,-59,18400,SUCCESS
+1783811809000,nodemcu_intervensi,16,-60,18350,SUCCESS
+1783811810000,nodemcu_intervensi,16,-60,18280,SUCCESS

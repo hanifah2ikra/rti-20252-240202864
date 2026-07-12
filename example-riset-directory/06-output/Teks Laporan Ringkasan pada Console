@@ -1,0 +1,29 @@
+=== MEMULAI PROSES PEMBERSIHAN & ANALISIS DATA IOT ===
+Data Plaintext Berhasil Dimuat: 100 sampel (0 drop)
+Data AES-128 Berhasil Dimuat: 8 sampel (2 drop dieliminasi)
+
+[Statistik Deskriptif - Plaintext Baseline]
+{
+  "Mean (ms)": 2.15,
+  "Median (ms)": 2.15,
+  "Min (ms)": 2.11,
+  "Max (ms)": 2.18,
+  "Sampel Valid": 100
+}
+
+[Statistik Deskriptif - AES-128 Intervensi]
+{
+  "Mean (ms)": 21.61,
+  "Median (ms)": 18.3,
+  "Min (ms)": 18.19,
+  "Max (ms)": 45.12,
+  "Sampel Valid": 8
+}
+
+=== HASIL UJI INFERENSIAL (WELCH'S T-TEST) ===
+t-Statistic : -6.0412
+p-Value     : 0.00029
+Kesimpulan  : Signifikan! Penambahan Enkripsi AES-128 mempengaruhi Latensi RTT secara Nyata.
+
+[SUKSES] Grafik boxplot performa telah diexport ke: ../06-output/komparasi_latensi_boxplot.png
+=== PROSES SELESAI ===

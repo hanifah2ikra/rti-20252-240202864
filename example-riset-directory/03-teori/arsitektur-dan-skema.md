@@ -1,234 +1,146 @@
 # Arsitektur dan Skema Sistem — Evaluasi Komparatif Express.js vs Gin
 
-## 1. Gambaran Umum Arsitektur
+## 1. Diagram Arsitektur Komponen (Gateway, Redis, PostgreSQL)
 
-Sistem penelitian ini terdiri dari empat komponen utama yang berjalan dalam lingkungan Docker Compose yang terisolasi:
+Pada sistem IoT, API Gateway diwakili oleh sebuah IoT Gateway/Broker MQTT Proxy, Redis digunakan untuk mencatat state intervensi serta data log latensi cepat, sedangkan PostgreSQL menyimpan riwayat benchmark RTT utuh.
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Docker Compose Network                        │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────┐  │
-│  │   Express.js │    │      Gin     │    │    PostgreSQL 15     │  │
-│  │   (Node.js)  │    │   (Go)       │    │   (port 5432)        │  │
-│  │   :3000      │    │   :8080      │    │                      │  │
-│  └──────┬───────┘    └──────┬───────┘    └──────────┬───────────┘  │
-│         │                    │                      │                │
-│         └────────────────────┼──────────────────────┘                │
-│                              │                                       │
-│                    ┌─────────▼──────────┐                            │
-│                    │       Redis        │  (opsional, untuk caching) │
-│                    │       :6379        │                            │
-│                    └───────────────────┘                            │
-└─────────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+       |             TRAFIK PERANGKAT (NodeMCU ESP8266 / MQTT)        |
+       +-------------------------------------------------------------+
+                                      |
+                                      v
+                        +---------------------------+
+                        |   Mosquitto MQTT Broker   |
+                        |   & IoT Gateway Proxy     |
+                        +---------------------------+
+                          /                       \
+        (1. Ambil Kebijakan / \                       / (3. Penyimpanan Log
+           State Enkripsi)     \                     /      Kuantitatif RTT)
+                                v                     v
+                +-----------------+       +-----------------------+
+                |   Redis Cache   |       | PostgreSQL Database   |
+                | (In-Memory K/V) |       |  (Persistent Store)   |
+                +-----------------+       +-----------------------+
 ```
 
-## 2. Komponen Aplikasi
+## 2. Mekanisme Interaksi Komponen
 
-### 2.1. Express.js API
+### 2.1. IoT Gateway / Broker MQTT
+Menerima pesan publish instan berisi payload kendali sakelar pintar (baik Plaintext maupun Ciphertext AES-128) dari NodeMCU.
 
-- **Framework**: Express 4.x dengan TypeScript
-- **Runtime**: Node.js 20.x
-- **Database**: PostgreSQL via Prisma ORM
-- **Port**: 3000
-- **Endpoints**:
-  - `GET /api/simple` — handler sederhana tanpa database
-  - `GET /api/users/:id` — single database query
-  - `GET /api/users/stats` — complex database query (agregasi)
-  - `GET /health` — health check
+### 2.2. Redis Cache
+Menyimpan flag state status enkripsi perangkat saat ini secara instan, mengelola rate-limiting paket untuk mencegah flooding dari node rusak, serta menjadi buffer log mikrodetik sementara.
 
-### 2.2. Gin API
+### 2.3. PostgreSQL Engine
+Menyimpan data 200 sampel eksperimen secara utuh untuk keperluan agregasi data statistik, pemrosesan rumus Welch's t-test, dan analisis pencilan jangka panjang.
 
-- **Framework**: Gin (Go)
-- **Runtime**: Go 1.24.x
-- **Database**: PostgreSQL via GORM
-- **Port**: 8080
-- **Endpoints**: sama persis dengan Express untuk memastikan perbandingan valid
-- **Konfigurasi**: `gin.SetMode(gin.ReleaseMode)` untuk menghilangkan overhead debug
+## 3. Diagram Alur Resolusi Kunci (Mitigasi Paket Flooding & Validasi Enkripsi)
 
-## 3. Skema Database
+Diagram alur ini menggambarkan bagaimana sistem memproses setiap paket data sensor/sakelar yang dikirim oleh NodeMCU untuk memitigasi flooding akibat kegagalan transmisi (MAC layer retransmission).
 
-Kedua aplikasi menggunakan database PostgreSQL yang sama dengan skema berikut:
+[ Paket MQTT Masuk dari NodeMCU ESP8266 ]
+                                    |
+                                    v
+               +-------------------------------------------+
+               | Cek Rate-Limit Koneksi Node di Redis      |
+               +-------------------------------------------+
+                                    |
+                           (Apakah Melebihi?)
+                           /                \
+                     [Ya] /                  \ [Tidak]
+                         v                    v
+             +------------------------+   +----------------------------------+
+             | Drop Paket (Muted/Timeout) |   | Cek Status Validasi Struktur Data|
+             +------------------------+   +----------------------------------+
+                                                   |
+                                            (Apakah Malformed?)
+                                            /                \
+                                      [Ya] /                  \ [Tidak]
+                                          v                    v
+                              +--------------------+   +--------------------------------+
+                              | Masuk ke Redis     |   | Cek Tipe Payload (Plain/Cipher)|
+                              | Negative Cache     |   +--------------------------------+
+                              +--------------------+                    |
+                                                                        v
+                                                            (Apakah AES-128 Aktif?)
+                                                            /                     \
+                                                      [Ya] /                       \ [Tidak]
+                                                          v                         v
+                                              +-----------------------+  +----------------------+
+                                              | Dekripsi dengan Kunci  |  | Langsung Eksekusi    |
+                                              | AES di Gateway Layer  |  | Perintah Sakelar     |
+                                              +-----------------------+  +----------------------+
+                                                          |                         |
+                                                          +------------+------------+
+                                                                       |
+                                                                       v
+                                                           [ Catat T1 & T2 di Redis ]
+                                                                       |
+                                                                       v
+                                                           [ Simpan Permanen ke PG ]
 
-### 3.1. Tabel `users`
+### 3.1. Skema Database PostgreSQL
+Skema basis data relasional ini digunakan untuk menampung riwayat data Round Trip Time (RTT) kuantitatif dari 40 replikasi hingga 200 total sampel guna mendeteksi signifikansi statistik.
 
-```sql
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+-- Tabel untuk menyimpan riwayat performa uji coba RTT secara presisi
+CREATE TABLE rtt_experiments (
+    id BIGSERIAL PRIMARY KEY,
+    device_id VARCHAR(50) NOT NULL,            -- Identitas NodeMCU
+    scenario_type VARCHAR(20) NOT NULL,        -- 'plaintext' atau 'aes128'
+    t1_timestamp BIGINT NOT NULL,              -- Waktu kirim (dalam mikrodetik)
+    t2_timestamp BIGINT NOT NULL,              -- Waktu terima ACK (dalam mikrodetik)
+    rtt_latency_ms NUMERIC(8,3) NOT NULL,       -- Hasil (t2 - t1) / 1000
+    is_outlier BOOLEAN DEFAULT FALSE,          -- Penanda paket anomali (misal: > 40 ms)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-### 3.2. Tabel `orders`
-
-```sql
-CREATE TABLE orders (
+-- Tabel untuk mencatat kegagalan paket (2 paket drop/timeout)
+CREATE TABLE packet_failures (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    amount DECIMAL(10,2),
-    status VARCHAR(50),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    device_id VARCHAR(50) NOT NULL,
+    error_reason TEXT NOT NULL,                 -- 'Timeout', 'MAC Retransmission', 'RF Interference'
+    occurred_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-### 3.3. Query Patterns
+-- Indexing untuk kebutuhan kalkulasi statistik Welch's t-test
+CREATE INDEX idx_scenario_rtt ON rtt_experiments(scenario_type, rtt_latency_ms);
 
-| Skenario | Query yang Dijalankan |
-|---|---|
-| `baseline` | Tidak ada query — hanya `res.json({ ok: true })` |
-| `db_single` | `SELECT * FROM users WHERE id = $1` |
-| `db_complex` | `SELECT u.id, u.name, COUNT(o.id) as order_count, SUM(o.amount) as total_amount FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id, u.name ORDER BY order_count DESC LIMIT 100` |
+## 4. Skema Penyimpanan Redis (Key-Value Design untuk IoT)
+Penerapan cache tingkat tinggi pada Redis disesuaikan untuk melacak kondisi real-time perangkat nirkabel.
 
-## 4. Alur Request
-
-### 4.1. Baseline (tanpa database)
+### 4.1. Positive Cache (Menyimpan State Node Valid)
 
 ```
-Client → API Gateway (k6) → Express/Gin → Handler → Response JSON (tanpa DB)
+Format Key: iot:pos:node:<device_id>:config
+
+Value: {"encryption": "AES-128", "key_version": "v1", "status": "authorized"}
+
+TTL (Time to Live): 86400 detik (24 Jam).
+
+Tujuan: Mempercepat verifikasi apakah NodeMCU yang terhubung wajib mengirimkan data terenkripsi atau teks biasa tanpa perlu membebani basis data relasional.
 ```
 
-### 4.2. Single Query
+### 4.2. Negative Cache (Meredam Node Rusak / Ancaman Sniffing)
 
 ```
-Client → API Gateway (k6) → Express/Gin → Prisma/GORM → PostgreSQL → Result → Response JSON
+Format Key: iot:neg:node:<device_id>:malformed
+
+Value: {"fail_count": 5, "last_error": "Decryption Failed"}
+
+TTL (Time to Live): 300 detik (5 Menit).
+
+Tujuan: Jika sebuah node IoT mengirimkan data terenkripsi yang salah (kunci tidak cocok/serangan injeksi paket), broker langsung memblokir komunikasi node tersebut di lapisan cache memory selama 5 menit.
 ```
 
-### 4.3. Complex Query
+### 4.3. Rate Limit Counter (Sliding Window untuk Wi-Fi Flooding)
 
 ```
-Client → API Gateway (k6) → Express/Gin → Prisma/GORM → PostgreSQL (JOIN + GROUP BY + aggregasi) → Result → Response JSON
+Format Key: iot:rl:node:<device_id>:burst
+
+Value: Integer (Counter frekuensi kirim pesan).
+
+TTL (Time to Live): 10 detik.
+
+Tujuan: Mencegah terjadinya flooding jaringan radio 2.4 GHz akibat malfungsi perulangan (infinite loop) pada kode program NodeMCU, menjaga batas kirim maksimal 10 messages per 10 detik.
 ```
-
-## 5. Konfigurasi Lingkungan
-
-### 5.1. Docker Compose
-
-```yaml
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: benchmark
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5433:5432"
-    volumes:
-      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
-
-  express-api:
-    build: ./apps/express-api
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://user:password@postgres:5432/benchmark
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  gin-api:
-    build: ./apps/gin-api
-    ports:
-      - "8080:8080"
-    environment:
-      DATABASE_URL: postgresql://user:password@postgres:5432/benchmark
-    depends_on:
-      postgres:
-        condition: service_healthy
-```
-
-### 5.2. Database Seeding
-
-- **Users**: 10.000 baris data
-- **Orders**: 50.000 baris data (relasi ke users)
-- Data di-generate via SQL seed script sebelum pengujian
-
-## 6. Proses Pengujian
-
-### 6.1. Workflow Eksperimen
-
-```
-1. Setup: docker compose up -d
-2. Seed database: docker exec -i postgres psql -U user -d benchmark -f /docker-entrypoint-initdb.d/seed.sql
-3. Warm-up: Jalankan kedua API selama 30 detik
-4. Baseline test: k6 run --vus 50 --duration 60s legitimate.js (target Express:3000 atau Gin:8080)
-5. DB Single test: k6 run --vus 50 --duration 60s db_single.js
-6. DB Complex test: k6 run --vus 50 --duration 60s db_complex.js
-7. Repeat: Ulangi 40 replikasi per kombinasi
-8. Collect: Simpan k6-summary.json per run ke 04-data/
-```
-
-### 6.2. Metrik yang Dikumpulkan
-
-| Metrik | Sumber | Deskripsi |
-|---|---|---|
-| `http_req_duration` | k6 | Latensi per request (avg, min, max, p90, p95, p99) |
-| `http_reqs` | k6 | Total request yang berhasil |
-| `http_req_failed` | k6 | Request yang gagal |
-| `iteration_duration` | k6 | Durasi seluruh iterasi script |
-
-## 7. Variabel Eksperimen
-
-### 7.1. Variabel Independen
-
-- **Framework**: Express.js (Node.js), Gin (Go)
-- **Skenario**: baseline, db_single, db_complex
-
-### 7.2. Variabel Dependen
-
-- Latensi request (ms)
-- Distribusi latency (mean, median, persentil)
-- Jumlah outlier
-- Error rate
-
-### 7.3. Kontrol Variabel
-
-- Sumber daya Docker (CPU, RAM) — sama untuk kedua framework
-- Dataset database — identik untuk kedua framework
-- Endpoint implementasi — sama persis
-- Jaringan — dalam satu Docker network
-- Versi framework — terkunci (Express 4.x, Gin latest stable)
-
-## 8. Diagram Arsitektur (Mermaid)
-
-```mermaid
-graph TB
-    subgraph "Host Machine"
-        K6[k6 Load Generator]
-    end
-
-    subgraph "Docker Compose"
-        subgraph "Application Layer"
-            EXPRESS[Express.js API<br/>:3000]
-            GIN[Gin API<br/>:8080]
-        end
-
-        subgraph "Data Layer"
-            PG[(PostgreSQL 15<br/>:5433)]
-        end
-    end
-
-    K6 -->|HTTP Request| EXPRESS
-    K6 -->|HTTP Request| GIN
-    EXPRESS -->|Query| PG
-    GIN -->|Query| PG
-
-    style EXPRESS fill:#e1f5fe
-    style GIN fill:#e8f5e9
-    style PG fill:#fff3e0
-```
-
-## 9. Expected Outcomes (Hipotesis)
-
-1. **Baseline**: Gin akan menunjukkan latency median ~3–5 ms, sedangkan Express ~50–100 ms. Rasio performa diharapkan ~15–30x.
-2. **DB Single**: Perbedaan akan menyempit karena latency database mendominasi. Rasio diharapkan ~5–10x.
-3. **DB Complex**: Gin tetap lebih cepat, namun dengan rasio yang lebih kecil (~3–5x) karena agregasi database menjadi bottleneck utama.
-4. **Distribusi**: Express akan menunjukkan lebih banyak outlier karena event loop blockage, sedangkan Gin akan menunjukkan distribusi yang lebih konsisten.
-
-## 10. Keterbatasan
-
-1. Hanya satu representative workload JSON REST API diuji.
-2. Docker Desktop pada Windows memperkenalkan overhead virtualization.
-3. Versi tertentu dari setiap framework digunakan; upgrade major dapat mengubah perbandingan.
-4. Sumber daya server (CPU, RAM, I/O) tidak di-isolate secara ketat antar run.

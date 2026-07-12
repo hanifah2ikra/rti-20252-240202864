@@ -1,0 +1,25 @@
+# Pendahuluan
+
+## Latar Belakang
+
+Integrasi Internet of Things (IoT) ke dalam ekosistem domestik telah mengubah paradigma hunian konvensional menjadi Smart Home yang interaktif. Di era modern ini, otomasi rumah tidak lagi dipandang sebagai komoditas mewah, melainkan sebagai kebutuhan efisiensi energi, kenyamanan, dan manajemen utilitas. Berbagai perangkat elektronik seperti pencahayaan, pengondisi udara, sistem pengunci pintu, hingga kamera pengawas kini terhubung ke jaringan internet demi memungkinkan kontrol jarak jauh melalui aplikasi gawai. Di tingkat implementasi sirkuit, mikrokontroler System-on-Chip (SoC) seperti NodeMCU ESP8266 menjadi opsi yang sangat populer bagi para praktisi dan pengembang. Popularitas ini didorong oleh harganya yang ekonomis, ketersediaan modul Wi-Fi onboard terintegrasi berbasis standar IEEE 802.11 b/g/n, serta ekosistem open-source yang masif.
+
+Namun, di balik adopsi massal tersebut, terdapat celah kerentanan yang kritikal pada sektor keamanan siber. Sebagian besar arsitektur Smart Home kelas menengah ke bawah yang dikembangkan secara mandiri mengabaikan aspek integritas dan kerahasiaan data (confidentiality). Paket data perintah sakelar—seperti instruksi membuka kunci pintu digital atau mematikan sensor keamanan—sering kali ditransmisikan dalam bentuk teks biasa (plaintext) melalui protokol nirkabel terbuka atau menggunakan protokol lightweight broker seperti MQTT (Message Queuing Telemetry Transport) tanpa enkripsi bawaan. Karakteristik media transmisi nirkabel yang bersifat broadcast (memancar bebas ke segala arah) membuat paket data ini rentan disadap menggunakan teknik packet sniffing. Penyerang yang berada di jangkauan sinyal Wi-Fi yang sama dapat dengan mudah menangkap payload perintah, melakukan reverse-engineering struktur data, dan meluncurkan serangan lanjutan berupa Man-in-the-Middle (MitM) atau replay attack untuk mengontrol kendali fisik rumah secara ilegal.
+
+Tantangan terbesar dalam mengamankan mikrokontroler kelas rendah seperti ESP8266 adalah keterbatasan sumber daya komputasi. Chip Xtensa LX106 32-bit yang tertanam di dalam NodeMCU hanya beroperasi pada frekuensi clock 80 MHz hingga 160 MHz dengan memori SRAM yang sangat terbatas, berkisar di angka 80 KB untuk penampungan data dinamis. Di sisi lain, algoritma kriptografi modern yang tangguh umumnya membutuhkan operasi matematika matriks kompleks yang intensif terhadap penggunaan CPU dan memori. Jika sebuah skema enkripsi yang terlalu berat dipaksakan berjalan pada mikrokontroler, maka akan terjadi lonjakan waktu pemrosesan (computation overhead). Efek domino dari fenomena ini adalah peningkatan latensi pengiriman pesan atau Round Trip Time (RTT), penumpukan antrean instruksi, hingga potensi terjadinya system crash atau packet drop akibat kegagalan pemenuhan tenggat waktu respon (timeout). Untuk aplikasi Smart Home yang menuntut respon instan (real-time response), peningkatan latensi di atas ambang batas tertentu akan menurunkan kenyamanan pengguna dan reliabilitas sistem secara drastis.
+
+Oleh karena itu, diperlukan sebuah kajian mendalam mengenai pemilihan algoritma kriptografi yang seimbang antara tingkat keamanan yang ditawarkan dengan beban performa komputasi yang ditimbulkan. Algoritma Advanced Encryption Standard (AES) dengan panjang kunci 128-bit (AES-128) dipandang sebagai kandidat potensial. Sebagai algoritma simetris, AES-128 dikenal memiliki efisiensi komputasi yang tinggi dan kebutuhan memori yang relatif rendah dibandingkan algoritma asimetris seperti RSA, sementara secara teoritis masih sangat aman dari serangan brute-force konvensional. Meski demikian, perilaku nyata dari algoritma ini ketika dihadapkan pada fluktuasi jaringan nirkabel riil—seperti masalah pelemahan sinyal (fading), degradasi nilai Received Signal Strength Indication (RSSI), dan interferensi frekuensi radio 2.4 GHz yang padat di lingkungan perumahan—perlu diuji secara empiris melalui pemodelan skenario dunia nyata.
+
+## Rumusan Masalah
+
+Berdasarkan latar belakang di atas, rumusan masalah penelitian ini adalah:
+
+1. Bagaimana pengaruh implementasi algoritma enkripsi AES-128 terhadap peningkatan latensi transmisi data (Round Trip Time) pada mikrokontroler NodeMCU ESP8266 dibandingkan dengan transmisi plaintext?
+2. Sejauh mana fluktuasi kondisi jaringan nirkabel (nilai RSSI dan interferensi frekuensi) mempengaruhi tingkat keberhasilan pengiriman paket (packet delivery rate) data terenkripsi?
+3. Bagaimana dampak beban dekripsi data kiriman NodeMCU ESP8266 terhadap konsumsi sumber daya komputasi (utilisasi CPU dan memori) pada unit Edge Gateway Server lokal?
+
+## Tujuan Penelitian
+
+1. Mengukur secara presisi besaran nilai komparatif latensi RTT antara transmisi data berbasis plaintext dengan transmisi terenkripsi AES-128 pada lingkungan Smart Home.
+2. Menganalisis ketahanan sistem komunikasi terenkripsi terhadap gangguan jaringan nirkabel eksternal melalui identifikasi pencilan (outlier) dan perhitungan paket timeout.
+3. Mengevaluasi performa dan efisiensi infrastruktur kontainer Edge Gateway dalam menangani beban kerja operasional broker IoT pasca-intervensi kriptografi.

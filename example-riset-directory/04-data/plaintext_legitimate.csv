@@ -1,0 +1,11 @@
+timestamp,device_id,payload_size_bytes,rssi_dbm,rtt_latency_micros,status
+1783811701000,nodemcu_baseline,16,-60,2150,SUCCESS
+1783811702000,nodemcu_baseline,16,-59,2120,SUCCESS
+1783811703000,nodemcu_baseline,16,-60,2180,SUCCESS
+1783811704000,nodemcu_baseline,16,-60,2110,SUCCESS
+1783811705000,nodemcu_baseline,16,-61,2140,SUCCESS
+1783811706000,nodemcu_baseline,16,-60,2160,SUCCESS
+1783811707000,nodemcu_baseline,16,-59,2130,SUCCESS
+1783811708000,nodemcu_baseline,16,-60,2150,SUCCESS
+1783811709000,nodemcu_baseline,16,-60,2170,SUCCESS
+1783811710000,nodemcu_baseline,16,-60,2130,SUCCESS

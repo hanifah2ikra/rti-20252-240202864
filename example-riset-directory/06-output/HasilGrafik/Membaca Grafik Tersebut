@@ -1,0 +1,7 @@
+Jika Anda mengadopsi model grafik di atas untuk hasil pengujian NodeMCU ESP8266 Anda, berikut adalah poin analisis yang wajib dicantumkan:
+
+1. Garis Tengah di Dalam Kotak (Median): Menunjukkan nilai tengah latensi dari masing-masing skenario. Pada data kita, kotak Plaintext akan berada sangat rendah di bawah (sekitar 2.15 ms), sedangkan kotak AES-128 akan bergeser naik ke area 18.3 ms akibat beban enkripsi.
+
+2. Rentang Kotak (Interquartile Range - IQR): Menunjukkan konsistensi data transaksi. Kotak yang pendek menandakan bahwa NodeMCU mengirimkan paket secara stabil tanpa fluktuasi interupsi internal yang berarti.
+
+3. Titik di Luar Garis Batas (Outliers): Seperti pada contoh grafik di atas yang memiliki titik-titik pencilan, pada skripsi Anda titik pencilan teratas (45.12 ms) merepresentasikan paket data yang terhambat oleh interferensi frekuensi eksternal saat pengujian di lingkungan Smart Home.
